@@ -11,11 +11,10 @@ import { useToast } from "../contexts/ToastContext";
 import { ApiError } from "../lib/api/client";
 
 export const Route = createFileRoute("/register")({
+  // Único fluxo de auto-cadastro do produto é o de médico — evita criar
+  // usuários DOCTOR órfãos (sem DoctorProfile, nunca aprováveis).
   beforeLoad: () => {
-    if (typeof window !== "undefined") {
-      const hasToken = !!window.localStorage.getItem("bp.token");
-      if (hasToken) throw redirect({ to: "/dashboard" });
-    }
+    throw redirect({ to: "/register-medico" });
   },
   head: () => ({ meta: [{ title: "Criar conta — Base" }] }),
   component: RegisterPage,

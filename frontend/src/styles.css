@@ -51,6 +51,42 @@
   color-scheme: dark;
 }
 
+/*
+ * Escopo visual da área do médico (AAI) — navy/branco/ciano, extraído das
+ * cores reais do site institucional (não copia logo/conteúdo).
+ * Sobrescreve os MESMOS nomes de variável usados em :root/.dark, então todo
+ * componente existente (Card, Button, Badge, ...) reskina automaticamente
+ * dentro de .brand-medico, sem precisar tocar em nenhum componente.
+ * Aplicada apenas na raiz do layout _medico.tsx — nunca em :root/.dark.
+ */
+.brand-medico {
+  --bg: #03060b;
+  --bg-elev: #0a1830;
+  --surface-1: #0e2038;
+  --surface-2: #14294a;
+  --surface-3: #1c3660;
+  --fg: #f5f9ff;
+  --fg-muted: #8fa3c2;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --accent: #6ad7ff;
+  --accent-soft: rgba(106, 215, 255, 0.14);
+  --accent-fg: #03060b;
+  --danger: #ff5c6a;
+  --success: #6ad7ff;
+  --popover: #0e2038;
+  --shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+
+  /* Tokens da paleta literal — para usos que precisam da cor exata da marca
+     independente do papel semântico (ex.: painel dividido de login/registro). */
+  --brand-navy: #03060b;
+  --brand-navy-deep: #021b55;
+  --brand-blue: #2761c8;
+  --brand-cyan: #6ad7ff;
+  --brand-white: #ffffff;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-elev: var(--bg-elev);
@@ -67,6 +103,13 @@
   --color-danger: var(--danger);
   --color-success: var(--success);
   --color-popover: var(--popover);
+
+  /* Só resolvem dentro de .brand-medico — em qualquer outro lugar ficam undefined. */
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
+  --color-brand-white: var(--brand-white);
 
   --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;

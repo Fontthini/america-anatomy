@@ -94,3 +94,58 @@ export function resetPasswordTemplate(data: ResetPasswordEmailData): {
 export function buildResetUrl(token: string): string {
   return `${appUrl()}/redefinir-senha?token=${token}`;
 }
+
+export interface DoctorNameEmailData {
+  name: string;
+}
+
+export function doctorPendingApprovalTemplate(data: DoctorNameEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const subject = `Cadastro recebido — ${appName()}`;
+  const html = baseTemplate(`
+    <h1>Cadastro recebido, ${data.name}!</h1>
+    <p>Recebemos seu cadastro como médico e ele já está em análise pela nossa equipe.</p>
+    <p>Assim que for aprovado, você receberá um e-mail e já poderá acessar a área exclusiva do médico.</p>
+  `);
+  const text = `Cadastro recebido — ${appName()}\n\nOlá, ${data.name}!\n\nRecebemos seu cadastro como médico e ele já está em análise. Você será avisado por e-mail assim que for aprovado.`;
+  return { subject, html, text };
+}
+
+export function doctorApprovedTemplate(data: DoctorNameEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const subject = `Cadastro aprovado — ${appName()}`;
+  const html = baseTemplate(`
+    <h1>Parabéns, ${data.name}!</h1>
+    <p>Seu cadastro foi aprovado. Você já tem acesso à área exclusiva do médico, com catálogo de produtos, cursos e seminários.</p>
+    <a href="${appUrl()}/medico" class="btn">Acessar área do médico</a>
+  `);
+  const text = `Cadastro aprovado — ${appName()}\n\nParabéns, ${data.name}! Seu cadastro foi aprovado.\n\nAcesse: ${appUrl()}/medico`;
+  return { subject, html, text };
+}
+
+export interface DoctorRejectedEmailData {
+  name: string;
+  reason?: string;
+}
+
+export function doctorRejectedTemplate(data: DoctorRejectedEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const subject = `Atualização sobre seu cadastro — ${appName()}`;
+  const html = baseTemplate(`
+    <h1>Olá, ${data.name}</h1>
+    <p>Analisamos seu cadastro e, no momento, não foi possível aprová-lo.</p>
+    ${data.reason ? `<p><strong>Motivo:</strong> ${data.reason}</p>` : ""}
+    <p>Se você acredita que houve um engano, entre em contato com nossa equipe.</p>
+  `);
+  const text = `Olá, ${data.name}\n\nAnalisamos seu cadastro e, no momento, não foi possível aprová-lo.${data.reason ? `\n\nMotivo: ${data.reason}` : ""}\n\nSe você acredita que houve um engano, entre em contato com nossa equipe.`;
+  return { subject, html, text };
+}

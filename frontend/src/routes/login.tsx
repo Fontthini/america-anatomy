@@ -140,16 +140,17 @@ function LoginPage() {
           </Button>
 
           <p className="text-center text-sm text-fg-muted">
-            Ainda não tem conta?{" "}
-            <Link to="/register" className="text-fg underline-offset-4 hover:underline">
-              Criar conta
+            É médico e ainda não tem conta?{" "}
+            <Link to="/register-medico" className="text-fg underline-offset-4 hover:underline">
+              Cadastre-se
             </Link>
           </p>
         </form>
 
         <div className="rounded-lg border border-line bg-surface-1 p-3 text-xs text-fg-muted">
           <p className="font-medium text-fg">Credenciais demo</p>
-          <p className="mt-0.5 font-mono">demo@demo.com · demo1234</p>
+          <p className="mt-0.5 font-mono">admin@demo.com · demo1234 (admin)</p>
+          <p className="mt-0.5 font-mono">medico@demo.com · demo1234 (médico aprovado)</p>
         </div>
       </div>
     </AuthSplit>

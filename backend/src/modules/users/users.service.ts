@@ -4,6 +4,7 @@ import { uploadFile, deleteFile, extractPathFromCdnUrl } from "../../lib/storage
 import { createNotification, NotificationType } from "../../lib/notifications.js";
 import type { UpdateProfileInput, UpdatePreferencesInput } from "./users.schemas.js";
 import type { UserResponse } from "../auth/auth.schemas.js";
+import type { Role } from "@prisma/client";
 
 function toUserResponse(user: {
   id: string;
@@ -11,7 +12,7 @@ function toUserResponse(user: {
   email: string;
   avatarUrl: string | null;
   bio: string | null;
-  role: string;
+  role: Role;
   emailVerified: boolean;
   emailNotifications: boolean;
   productUpdates: boolean;

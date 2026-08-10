@@ -11,7 +11,12 @@ export type NotificationType =
   | "PASSWORD_CHANGED"
   | "PASSWORD_RESET_REQUESTED"
   | "PROFILE_UPDATED"
-  | "AVATAR_UPDATED";
+  | "AVATAR_UPDATED"
+  | "DOCTOR_REGISTRATION_RECEIVED"
+  | "NEW_DOCTOR_PENDING"
+  | "DOCTOR_APPROVED"
+  | "DOCTOR_REJECTED"
+  | "ORDER_CREATED";
 
 export type ApiNotification = {
   id: string;

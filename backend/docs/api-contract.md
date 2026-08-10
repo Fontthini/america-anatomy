@@ -27,7 +27,7 @@ Shape retornado em toda resposta que contém um usuário. Campos `null` são **o
   email: string;
   avatarUrl?: string;           // omitido se não definido
   bio?: string;                 // omitido se não definido
-  role: string;                 // padrão "Owner"
+  role: "DOCTOR" | "STAFF" | "ADMIN";  // padrão "DOCTOR"
   emailVerified: boolean;       // false até confirmar e-mail
   emailNotifications: boolean;  // preferência de notificação por e-mail (padrão true)
   productUpdates: boolean;      // preferência de novidades do produto (padrão false)
@@ -69,6 +69,12 @@ Todos os erros seguem este shape:
 | `INVALID_CREDENTIALS` | 401 | E-mail ou senha incorretos; inclui `details.passwordChangedAt` (ISO 8601) se a senha foi trocada via reset |
 | `EMAIL_ALREADY_EXISTS` | 409 | E-mail já cadastrado |
 | `NOT_FOUND` | 404 | Recurso não encontrado |
+| `FORBIDDEN` | 403 | Role do usuário não tem permissão para o recurso (`requireRole`) |
+| `DOCTOR_NOT_APPROVED` | 403 | Médico autenticado ainda não foi aprovado (`requireApproved`); `details.approvalStatus` = `PENDING` \| `REJECTED` |
+| `DOCTOR_PROFILE_NOT_FOUND` | 404 | Usuário não possui `DoctorProfile` |
+| `CATALOG_ITEM_NOT_FOUND` | 404 | Item de catálogo inexistente, ou não `PUBLISHED` para quem não é staff/admin |
+| `COURSE_FULL` | 409 | Sem vagas para o curso |
+| `SEMINAR_FULL` | 409 | Sem vagas para o seminário |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -382,7 +388,7 @@ Retorna as últimas 100 notificações do usuário, mais recentes primeiro.
 ```typescript
 {
   id: string;
-  type: "WELCOME" | "EMAIL_VERIFIED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PROFILE_UPDATED" | "AVATAR_UPDATED";
+  type: "WELCOME" | "EMAIL_VERIFIED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PROFILE_UPDATED" | "AVATAR_UPDATED" | "DOCTOR_REGISTRATION_RECEIVED" | "NEW_DOCTOR_PENDING" | "DOCTOR_APPROVED" | "DOCTOR_REJECTED" | "ORDER_CREATED";
   title: string;
   body: string;
   readAt: string | null;   // ISO 8601, null se não lida
@@ -415,6 +421,249 @@ Marca todas as notificações não lidas do usuário como lidas.
 
 ---
 
+## Médicos (`/api/doctors/`)
+
+Fluxo: médico se cadastra → `DoctorProfile` criado com `approvalStatus: "PENDING"` → staff/admin aprova ou rejeita → só então o médico passa em `requireApproved` nas rotas de catálogo/pedidos.
+
+### `POST /api/doctors/register`
+
+Cadastra um novo médico (cria `User{role:"DOCTOR"}` + `DoctorProfile{approvalStatus:"PENDING"}` numa única operação). Já loga o médico (emite tokens), que deve ser direcionado para uma tela de "cadastro em análise" até ser aprovado.
+
+**Auth:** nenhuma
+
+**Request body:**
+```json
+{
+  "name": "string",
+  "email": "string",
+  "password": "string",
+  "crm": "string",          // opcional
+  "specialty": "string",    // opcional
+  "phone": "string",        // opcional
+  "clinicName": "string",   // opcional
+  "city": "string",         // opcional
+  "state": "string"         // opcional, sigla (2 chars)
+}
+```
+
+**Response `201`:** `{ user: UserResponse, token: "eyJ..." }` (mesmo shape de `/api/auth/register`)
+
+**Cookie setado:** `bp.refresh` (mesmas opções do auth)
+
+**Erros:** `400 VALIDATION_ERROR`, `409 EMAIL_ALREADY_EXISTS`
+
+---
+
+### `GET /api/doctors/me`
+
+Retorna o `DoctorProfile` do médico autenticado (inclui `approvalStatus`) — usado pelo front para decidir entre liberar a área do médico ou mostrar a tela de "em análise".
+
+**Auth:** `Authorization: Bearer <access_token>`
+
+**Response `200`:** `DoctorProfileResponse` (ver shape abaixo)
+
+**Erros:** `404 DOCTOR_PROFILE_NOT_FOUND`
+
+---
+
+### `GET /api/doctors?status=PENDING|APPROVED|REJECTED`
+
+Lista médicos, opcionalmente filtrados por status. `status` omitido retorna todos.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Response `200`:** array de `DoctorProfileResponse`
+
+```typescript
+{
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  crm: string | null;
+  specialty: string | null;
+  phone: string | null;
+  clinicName: string | null;
+  city: string | null;
+  state: string | null;
+  approvalStatus: "PENDING" | "APPROVED" | "REJECTED";
+  rejectionReason: string | null;
+  createdAt: string;
+}
+```
+
+**Erros:** `403 FORBIDDEN`
+
+---
+
+### `PATCH /api/doctors/:id/approve`
+
+Aprova o médico. `:id` é o `User.id` do médico (não o id do `DoctorProfile`). Envia e-mail e dispara notificação `DOCTOR_APPROVED`.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Response `200`:** `DoctorProfileResponse` atualizado
+
+**Erros:** `403 FORBIDDEN`, `404 DOCTOR_PROFILE_NOT_FOUND`
+
+---
+
+### `PATCH /api/doctors/:id/reject`
+
+Rejeita o médico, com motivo opcional. Envia e-mail e dispara notificação `DOCTOR_REJECTED`.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Request body:**
+```json
+{ "reason": "string" }
+```
+
+**Response `200`:** `DoctorProfileResponse` atualizado
+
+**Erros:** `403 FORBIDDEN`, `404 DOCTOR_PROFILE_NOT_FOUND`
+
+---
+
+## Catálogo (`/api/catalog/`)
+
+Catálogo unificado — um único recurso com `type: "PRODUCT" | "COURSE" | "SEMINAR"`. `COURSE`/`SEMINAR` usam campos de evento (`startsAt`, `location`, `capacity`, ...); `PRODUCT` usa `sku`/`stockQty`. Médicos só veem itens `PUBLISHED`; staff/admin veem todos os status.
+
+### `GET /api/catalog?type=&status=`
+
+**Auth:** `Authorization: Bearer <access_token>` + `requireApproved` (médico deve estar aprovado; staff/admin sempre passam). Para médicos, `status` é forçado para `PUBLISHED` independente do query param.
+
+**Response `200`:** array de `CatalogItemResponse`
+
+```typescript
+{
+  id: string;
+  type: "PRODUCT" | "COURSE" | "SEMINAR";
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+  title: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  price: string | null;        // Decimal serializado como string
+  startsAt: string | null;     // ISO 8601, COURSE/SEMINAR
+  endsAt: string | null;
+  location: string | null;
+  isOnline: boolean;
+  capacity: number | null;
+  vagasRestantes: number | null; // calculado: capacity - pedidos CONFIRMED
+  sku: string | null;           // PRODUCT
+  stockQty: number | null;      // PRODUCT
+  createdAt: string;
+}[]
+```
+
+**Erros:** `403 DOCTOR_NOT_APPROVED`
+
+---
+
+### `GET /api/catalog/:id`
+
+**Auth:** igual à listagem.
+
+**Response `200`:** `CatalogItemResponse`
+
+**Erros:** `403 DOCTOR_NOT_APPROVED`, `404 CATALOG_ITEM_NOT_FOUND`
+
+---
+
+### `POST /api/catalog`
+
+Cria item de catálogo (sempre `status: "DRAFT"` — publicar é uma atualização separada via `PATCH`). Body é uma união discriminada por `type`.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Request body (`type: "PRODUCT"`):**
+```json
+{ "type": "PRODUCT", "title": "string", "description": "string", "imageUrl": "string", "price": 0, "sku": "string", "stockQty": 0 }
+```
+
+**Request body (`type: "COURSE" | "SEMINAR"`):**
+```json
+{ "type": "SEMINAR", "title": "string", "startsAt": "2026-09-01T13:00:00Z", "endsAt": "2026-09-01T18:00:00Z", "location": "string", "isOnline": false, "capacity": 30, "price": 0 }
+```
+
+**Response `201`:** `CatalogItemResponse`
+
+**Erros:** `400 VALIDATION_ERROR`, `403 FORBIDDEN`
+
+---
+
+### `PATCH /api/catalog/:id`
+
+Atualização parcial (inclui trocar `status` para publicar/arquivar).
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Response `200`:** `CatalogItemResponse`
+
+**Erros:** `400 VALIDATION_ERROR`, `403 FORBIDDEN`, `404 CATALOG_ITEM_NOT_FOUND`
+
+---
+
+### `PATCH /api/catalog/:id/archive`
+
+Atalho para `status: "ARCHIVED"`. Itens com pedidos nunca podem ser excluídos (FK `onDelete: Restrict`) — arquivar é a forma correta de "remover" um item do catálogo ativo.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+
+**Response `200`:** `CatalogItemResponse`
+
+**Erros:** `403 FORBIDDEN`, `404 CATALOG_ITEM_NOT_FOUND`
+
+---
+
+## Pedidos (`/api/orders/`)
+
+Cobre tanto compra de produto quanto inscrição em curso/seminário — um único conceito de "pedido".
+
+### `POST /api/orders`
+
+Cria um pedido. Para `COURSE`/`SEMINAR`, `quantity` é sempre forçado para `1` e a vaga é checada transacionalmente (evita overselling em requisições concorrentes).
+
+**Auth:** `Authorization: Bearer <access_token>`, role `DOCTOR` + `requireApproved`
+
+**Request body:**
+```json
+{ "catalogItemId": "string", "quantity": 1 }
+```
+
+**Response `201`:**
+```typescript
+{
+  id: string;
+  catalogItemId: string;
+  catalogItemTitle: string;
+  catalogItemType: string;
+  quantity: number;
+  status: "PENDING" | "CONFIRMED" | "CANCELLED";
+  unitPrice: string | null;   // snapshot do preço no momento do pedido
+  createdAt: string;
+}
+```
+
+**Erros:**
+- `403 FORBIDDEN` — role não é `DOCTOR`
+- `403 DOCTOR_NOT_APPROVED`
+- `404 CATALOG_ITEM_NOT_FOUND` — item inexistente ou não `PUBLISHED`
+- `409 COURSE_FULL` / `409 SEMINAR_FULL` — sem vagas
+
+---
+
+### `GET /api/orders/me`
+
+Lista os pedidos do médico autenticado, mais recentes primeiro.
+
+**Auth:** `Authorization: Bearer <access_token>`, role `DOCTOR` + `requireApproved`
+
+**Response `200`:** array do mesmo shape de `POST /api/orders`
+
+---
+
 ## Tipos de notificação e quando são geradas
 
 | Tipo | Quando é disparada |
@@ -425,10 +674,17 @@ Marca todas as notificações não lidas do usuário como lidas.
 | `PASSWORD_CHANGED` | Ao redefinir senha (`POST /api/auth/reset-password`) |
 | `PROFILE_UPDATED` | Ao atualizar perfil (`PATCH /api/users/me`) |
 | `AVATAR_UPDATED` | Ao trocar avatar (`POST /api/users/me/avatar`) |
+| `DOCTOR_REGISTRATION_RECEIVED` | Ao médico se cadastrar (`POST /api/doctors/register`), para o próprio médico |
+| `NEW_DOCTOR_PENDING` | Ao médico se cadastrar, fan-out para todos os `STAFF`/`ADMIN` |
+| `DOCTOR_APPROVED` | Ao aprovar médico (`PATCH /api/doctors/:id/approve`) |
+| `DOCTOR_REJECTED` | Ao rejeitar médico (`PATCH /api/doctors/:id/reject`) |
+| `ORDER_CREATED` | Ao criar pedido (`POST /api/orders`) |
 
 ---
 
 ## Endpoints futuros (não implementados)
+
+Fase 2 (CRM): kanban de funil de vendas, indicações/parcerias, financeiro (transações ligadas a `Order`), portal de equipe.
 
 | Domínio | Método | Rota | Descrição |
 |---------|--------|------|-----------|
@@ -438,3 +694,8 @@ Marca todas as notificações não lidas do usuário como lidas.
 | Faturas | POST | `/api/invoices/:id/duplicate` | Duplicar fatura |
 | Faturas | DELETE | `/api/invoices/:id` | Excluir fatura |
 | Faturas | GET | `/api/invoices/export` | Exportar CSV/Excel |
+| Catálogo | GET | `/api/catalog/:id/orders` | Staff/admin: quem comprou/se inscreveu num item |
+| CRM | * | `/api/crm/*` | Funil kanban, leads, deals |
+| CRM | * | `/api/partners/*` | Indicações/parcerias |
+| CRM | * | `/api/finance/*` | Financeiro |
+| CRM | * | `/api/team/*` | Portal de equipe |

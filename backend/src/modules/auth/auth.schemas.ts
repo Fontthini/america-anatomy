@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Role } from "@prisma/client";
 
 export const registerSchema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres.").max(100),
@@ -42,7 +43,7 @@ export type UserResponse = {
   email: string;
   avatarUrl?: string;
   bio?: string;
-  role: string;
+  role: Role;
   emailVerified: boolean;
   emailNotifications: boolean;
   productUpdates: boolean;

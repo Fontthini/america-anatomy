@@ -15,6 +15,7 @@ import {
   buildResetUrl,
 } from "../../lib/email/templates.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
+import type { Role } from "@prisma/client";
 import type {
   RegisterInput,
   LoginInput,
@@ -33,13 +34,13 @@ const RESEND_COOLDOWN_MS = 60 * 1000;                // 1 min entre reenvios de 
 const FORGOT_PASSWORD_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h entre solicitações de reset
 const PASSWORD_HISTORY_LIMIT = 5;                    // quantas senhas anteriores bloquear
 
-function toUserResponse(user: {
+export function toUserResponse(user: {
   id: string;
   name: string;
   email: string;
   avatarUrl: string | null;
   bio: string | null;
-  role: string;
+  role: Role;
   emailVerified: boolean;
   emailNotifications: boolean;
   productUpdates: boolean;
@@ -57,7 +58,8 @@ function toUserResponse(user: {
   };
 }
 
-function issueTokens(user: { id: string; email: string }): {
+/** Exportado para reuso por outros módulos que emitem sessão no ato de criação (ex.: doctors). */
+export function issueTokens(user: { id: string; email: string }): {
   accessToken: string;
   refreshToken: string;
   jti: string;
@@ -68,7 +70,7 @@ function issueTokens(user: { id: string; email: string }): {
   return { accessToken, refreshToken, jti };
 }
 
-async function persistRefreshToken(userId: string, token: string): Promise<void> {
+export async function persistRefreshToken(userId: string, token: string): Promise<void> {
   const expiresAt = new Date(Date.now() + refreshTokenExpiresInMs());
   await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
 }

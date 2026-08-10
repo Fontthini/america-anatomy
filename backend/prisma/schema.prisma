@@ -10,6 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  DOCTOR
+  STAFF
+  ADMIN
+}
+
 model User {
   id                String    @id @default(cuid())
   name              String
@@ -17,7 +23,7 @@ model User {
   passwordHash      String
   avatarUrl         String?
   bio               String?
-  role              String    @default("Owner")
+  role              Role      @default(DOCTOR)
   emailVerified      Boolean   @default(false)
   emailVerifiedAt    DateTime?
   passwordChangedAt  DateTime?
@@ -30,6 +36,102 @@ model User {
   verificationTokens VerificationToken[]
   passwordHistory    PasswordHistory[]
   notifications      Notification[]
+  doctorProfile      DoctorProfile?  @relation("DoctorProfileUser")
+  approvedDoctors     DoctorProfile[] @relation("DoctorApprovals")
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model DoctorProfile {
+  id               String         @id @default(cuid())
+  userId           String         @unique
+  crm              String?
+  specialty        String?
+  phone            String?
+  clinicName       String?
+  city             String?
+  state            String?
+  approvalStatus   ApprovalStatus @default(PENDING)
+  approvedAt       DateTime?
+  approvedByUserId String?
+  rejectedAt       DateTime?
+  rejectionReason  String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  user       User    @relation("DoctorProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy User?   @relation("DoctorApprovals", fields: [approvedByUserId], references: [id])
+  orders     Order[]
+
+  @@index([approvalStatus])
+}
+
+enum CatalogItemType {
+  PRODUCT
+  COURSE
+  SEMINAR
+}
+
+enum CatalogItemStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model CatalogItem {
+  id          String            @id @default(cuid())
+  type        CatalogItemType
+  status      CatalogItemStatus @default(DRAFT)
+  title       String
+  slug        String            @unique
+  description String?
+  imageUrl    String?
+  price       Decimal?          @db.Decimal(10, 2)
+
+  // COURSE / SEMINAR apenas
+  startsAt DateTime?
+  endsAt   DateTime?
+  location String?
+  isOnline Boolean   @default(false)
+  capacity Int?
+
+  // PRODUCT apenas
+  sku      String?
+  stockQty Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders Order[]
+
+  @@index([type, status])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  doctorProfileId String
+  catalogItemId   String
+  quantity        Int         @default(1)
+  status          OrderStatus @default(CONFIRMED)
+  unitPrice       Decimal?    @db.Decimal(10, 2)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  catalogItem   CatalogItem   @relation(fields: [catalogItemId], references: [id], onDelete: Restrict)
+
+  @@index([catalogItemId])
+  @@index([doctorProfileId])
 }
 
 model PasswordHistory {
@@ -63,6 +165,11 @@ enum NotificationType {
   PASSWORD_RESET_REQUESTED
   PROFILE_UPDATED
   AVATAR_UPDATED
+  DOCTOR_REGISTRATION_RECEIVED
+  NEW_DOCTOR_PENDING
+  DOCTOR_APPROVED
+  DOCTOR_REJECTED
+  ORDER_CREATED
 }
 
 model Notification {

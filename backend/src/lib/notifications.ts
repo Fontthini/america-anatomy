@@ -30,6 +30,26 @@ const NOTIFICATION_CONTENT: Record<NotificationType, NotificationContent> = {
     title: "Foto atualizada",
     body: "Sua foto de perfil foi alterada com sucesso.",
   },
+  DOCTOR_REGISTRATION_RECEIVED: {
+    title: "Cadastro recebido",
+    body: "Recebemos seu cadastro de médico. Ele está em análise pela nossa equipe.",
+  },
+  NEW_DOCTOR_PENDING: {
+    title: "Novo médico aguardando aprovação",
+    body: "Um novo cadastro de médico foi recebido e aguarda análise.",
+  },
+  DOCTOR_APPROVED: {
+    title: "Cadastro aprovado",
+    body: "Seu cadastro foi aprovado! Você já tem acesso à área do médico.",
+  },
+  DOCTOR_REJECTED: {
+    title: "Cadastro não aprovado",
+    body: "Seu cadastro não foi aprovado. Confira os detalhes enviados por e-mail.",
+  },
+  ORDER_CREATED: {
+    title: "Pedido confirmado",
+    body: "Seu pedido/inscrição foi confirmado com sucesso.",
+  },
 };
 
 /**

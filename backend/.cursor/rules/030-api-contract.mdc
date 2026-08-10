@@ -23,7 +23,7 @@ Esta rule é um resumo rápido para o agente — manter ambos sincronizados.
   email: string;
   avatarUrl?: string;         // omitir se null
   bio?: string;               // omitir se null
-  role: string;               // padrão "Owner"
+  role: "DOCTOR" | "STAFF" | "ADMIN"; // padrão "DOCTOR"
   emailVerified: boolean;     // false até confirmar e-mail
   emailNotifications: boolean; // preferência de notificação por e-mail
   productUpdates: boolean;    // preferência de novidades do produto
@@ -72,6 +72,30 @@ Auth: — | Response `200`: `{ status: "ok", timestamp: string }`
 | PATCH | `/api/notifications/read-all` | Bearer | `204` | Marca todas como lidas |
 | PATCH | `/api/notifications/:id/read` | Bearer | `204` | Marca uma como lida |
 
+### Médicos (`/api/doctors`) — cadastro + aprovação
+| Método | Rota | Auth | Response | Descrição |
+|--------|------|------|----------|-----------|
+| POST | `/api/doctors/register` | — | `201 { user, token }` + cookie | Cria User(DOCTOR) + DoctorProfile(PENDING) |
+| GET | `/api/doctors/me` | Bearer | `200 DoctorProfileResponse` | Próprio perfil/status |
+| GET | `/api/doctors?status=` | Bearer + `requireRole(STAFF,ADMIN)` | `200 DoctorProfileResponse[]` | Listagem p/ aprovação |
+| PATCH | `/api/doctors/:id/approve` | Bearer + `requireRole(STAFF,ADMIN)` | `200 DoctorProfileResponse` | `:id` = User.id do médico |
+| PATCH | `/api/doctors/:id/reject` | Bearer + `requireRole(STAFF,ADMIN)` | `200 DoctorProfileResponse` | body opcional `{ reason }` |
+
+### Catálogo (`/api/catalog`) — PRODUCT / COURSE / SEMINAR unificado
+| Método | Rota | Auth | Response | Descrição |
+|--------|------|------|----------|-----------|
+| GET | `/api/catalog?type=&status=` | Bearer + `requireApproved` | `200 CatalogItemResponse[]` | DOCTOR só vê PUBLISHED |
+| GET | `/api/catalog/:id` | Bearer + `requireApproved` | `200 CatalogItemResponse` | — |
+| POST | `/api/catalog` | Bearer + `requireRole(STAFF,ADMIN)` | `201 CatalogItemResponse` | body: union discriminada por `type` |
+| PATCH | `/api/catalog/:id` | Bearer + `requireRole(STAFF,ADMIN)` | `200 CatalogItemResponse` | inclui publicar (`status`) |
+| PATCH | `/api/catalog/:id/archive` | Bearer + `requireRole(STAFF,ADMIN)` | `200 CatalogItemResponse` | nunca DELETE (FK Restrict) |
+
+### Pedidos (`/api/orders`) — compra de produto ou inscrição em curso/seminário
+| Método | Rota | Auth | Response | Descrição |
+|--------|------|------|----------|-----------|
+| POST | `/api/orders` | Bearer + `requireRole(DOCTOR)` + `requireApproved` | `201 OrderResponse` | checagem de vaga transacional p/ COURSE/SEMINAR |
+| GET | `/api/orders/me` | Bearer + `requireRole(DOCTOR)` + `requireApproved` | `200 OrderResponse[]` | — |
+
 ---
 
 ## Formato de erro (todos os endpoints)
@@ -85,13 +109,17 @@ Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.
 `INVALID_CODE`, `CODE_ALREADY_USED`, `CODE_EXPIRED`,
 `INVALID_TOKEN`, `TOKEN_ALREADY_USED`, `TOKEN_EXPIRED`,
 `INVALID_FILE_TYPE`, `STORAGE_NOT_CONFIGURED`, `STORAGE_UPLOAD_FAILED`,
+`FORBIDDEN`, `DOCTOR_NOT_APPROVED`, `DOCTOR_PROFILE_NOT_FOUND`,
+`CATALOG_ITEM_NOT_FOUND`, `COURSE_FULL`, `SEMINAR_FULL`,
 `INTERNAL_ERROR`
 
 ---
 
 ## Endpoints futuros (não implementados)
 
-Auth: `change-password`  
+Auth: `change-password`
 Dashboard: `/api/dashboard`, `/api/invoices` (CRUD + export)
+CRM (Fase 2): `/api/crm/*` (funil kanban), `/api/partners/*` (indicações), `/api/finance/*`, `/api/team/*`
+Catálogo: `GET /api/catalog/:id/orders` (staff: quem comprou/se inscreveu)
 
 Ver `docs/api-contract.md` para detalhes completos.

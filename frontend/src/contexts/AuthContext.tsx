@@ -15,6 +15,7 @@ import {
   apiForgotPassword,
   apiResetPassword,
 } from "../lib/api/auth";
+import { apiRegisterDoctor, type DoctorRegisterPayload } from "../lib/api/doctors";
 import { getToken, clearToken } from "../lib/api/client";
 import type { MockUser } from "../lib/mock/users";
 
@@ -25,6 +26,7 @@ type AuthContextValue = {
   status: AuthStatus;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: { name: string; email: string; password: string }) => Promise<void>;
+  registerDoctor: (payload: DoctorRegisterPayload) => Promise<void>;
   logout: () => void;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
@@ -95,6 +97,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const registerDoctor = useCallback(async (payload: DoctorRegisterPayload) => {
+    const u = await apiRegisterDoctor(payload);
+    setUser(u);
+    setStatus("authenticated");
+  }, []);
+
   const logout = useCallback(async () => {
     try {
       await apiLogout();
@@ -123,12 +131,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       status,
       login,
       register,
+      registerDoctor,
       logout,
       requestPasswordReset,
       resetPassword,
       updateProfile,
     }),
-    [user, status, login, register, logout, requestPasswordReset, resetPassword, updateProfile],
+    [
+      user,
+      status,
+      login,
+      register,
+      registerDoctor,
+      logout,
+      requestPasswordReset,
+      resetPassword,
+      updateProfile,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

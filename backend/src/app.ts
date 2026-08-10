@@ -6,6 +6,9 @@ import { registerErrorHandler } from "./middlewares/error-handler.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { usersRoutes } from "./modules/users/users.routes.js";
 import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
+import { doctorsRoutes } from "./modules/doctors/doctors.routes.js";
+import { catalogRoutes } from "./modules/catalog/catalog.routes.js";
+import { ordersRoutes } from "./modules/orders/orders.routes.js";
 
 export async function buildApp() {
   const isDev = process.env["NODE_ENV"] !== "production";
@@ -35,6 +38,9 @@ export async function buildApp() {
   await app.register(authRoutes);
   await app.register(usersRoutes);
   await app.register(notificationsRoutes);
+  await app.register(doctorsRoutes);
+  await app.register(catalogRoutes);
+  await app.register(ordersRoutes);
 
   return app;
 }

@@ -38,6 +38,11 @@ function AppLayout() {
     if (status === "unauthenticated") {
       void navigate({ to: "/login" });
     }
+    // Médico não tem o que fazer no CRM — manda pra área dele.
+    if (status === "authenticated" && user && user.role === "DOCTOR") {
+      void navigate({ to: "/medico" });
+      return;
+    }
     // Bloqueia acesso ao app se e-mail não confirmado
     if (status === "authenticated" && user && !user.emailVerified) {
       void navigate({ to: "/verificar-email" });

@@ -10,6 +10,9 @@ import {
   Key,
   UserCheck,
   Camera,
+  Stethoscope,
+  ShoppingBag,
+  XCircle,
 } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -49,6 +52,15 @@ function getNotifMeta(type: NotificationType): NotifMeta {
       return { icon: <UserCheck size={14} />, color: "text-accent" };
     case "AVATAR_UPDATED":
       return { icon: <Camera size={14} />, color: "text-accent" };
+    case "DOCTOR_REGISTRATION_RECEIVED":
+    case "NEW_DOCTOR_PENDING":
+      return { icon: <Stethoscope size={14} />, color: "text-accent" };
+    case "DOCTOR_APPROVED":
+      return { icon: <CheckCircle size={14} />, color: "text-success" };
+    case "DOCTOR_REJECTED":
+      return { icon: <XCircle size={14} />, color: "text-danger" };
+    case "ORDER_CREATED":
+      return { icon: <ShoppingBag size={14} />, color: "text-accent" };
     default:
       return { icon: <Bell size={14} />, color: "text-fg-muted" };
   }

@@ -9,20 +9,25 @@ import {
   ChevronsRight,
   Lock,
   Bell,
+  UserCheck,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { cn } from "../../lib/cn";
+import { roleLabels, type Role } from "../../lib/mock/users";
 
 type Item = {
   to: string;
   label: string;
   icon: typeof LayoutDashboard;
   disabled?: boolean;
+  /** Se definido, o item só aparece para as roles listadas. */
+  roles?: Role[];
 };
 
 const items: Item[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/medicos-pendentes", label: "Médicos Pendentes", icon: UserCheck, roles: ["STAFF", "ADMIN"] },
   { to: "/dashboard", label: "Analytics", icon: BarChart3, disabled: true },
   { to: "/dashboard", label: "Projetos", icon: Layers, disabled: true },
   { to: "/profile", label: "Perfil", icon: User },
@@ -63,7 +68,9 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 space-y-0.5 p-2">
-        {items.map((item, idx) => {
+        {items
+          .filter((item) => !item.roles || (user?.role && item.roles.includes(user.role)))
+          .map((item, idx) => {
           const Icon = item.icon;
           const active = pathname === item.to && !item.disabled;
 
@@ -119,7 +126,7 @@ export function Sidebar({
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm text-fg">{user?.name}</p>
-            <p className="truncate text-xs text-fg-muted">{user?.role}</p>
+            <p className="truncate text-xs text-fg-muted">{user?.role ? roleLabels[user.role] : ""}</p>
           </div>
         )}
       </div>

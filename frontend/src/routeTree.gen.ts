@@ -10,19 +10,32 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerificarEmailRouteImport } from './routes/verificar-email'
+import { Route as RegisterMedicoRouteImport } from './routes/register-medico'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as MedicoRouteImport } from './routes/_medico'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppMedicosPendentesRouteImport } from './routes/_app.medicos-pendentes'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
+import { Route as MedicoMedicoPendenteRouteImport } from './routes/_medico.medico.pendente'
+import { Route as MedicoMedicoPedidosRouteImport } from './routes/_medico.medico.pedidos'
+import { Route as MedicoMedicoCatalogoIndexRouteImport } from './routes/_medico.medico.catalogo.index'
+import { Route as MedicoMedicoCatalogoIdRouteImport } from './routes/_medico.medico.catalogo.$id'
 
 const VerificarEmailRoute = VerificarEmailRouteImport.update({
   id: '/verificar-email',
   path: '/verificar-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterMedicoRoute = RegisterMedicoRouteImport.update({
+  id: '/register-medico',
+  path: '/register-medico',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -45,6 +58,10 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MedicoRoute = MedicoRouteImport.update({
+  id: '/_medico',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -64,10 +81,41 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppMedicosPendentesRoute = AppMedicosPendentesRouteImport.update({
+  id: '/medicos-pendentes',
+  path: '/medicos-pendentes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AppRoute,
+} as any)
+const MedicoMedicoIndexRoute = MedicoMedicoIndexRouteImport.update({
+  id: '/medico/',
+  path: '/medico/',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoPendenteRoute = MedicoMedicoPendenteRouteImport.update({
+  id: '/medico/pendente',
+  path: '/medico/pendente',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoPedidosRoute = MedicoMedicoPedidosRouteImport.update({
+  id: '/medico/pedidos',
+  path: '/medico/pedidos',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoCatalogoIndexRoute =
+  MedicoMedicoCatalogoIndexRouteImport.update({
+    id: '/medico/catalogo/',
+    path: '/medico/catalogo/',
+    getParentRoute: () => MedicoRoute,
+  } as any)
+const MedicoMedicoCatalogoIdRoute = MedicoMedicoCatalogoIdRouteImport.update({
+  id: '/medico/catalogo/$id',
+  path: '/medico/catalogo/$id',
+  getParentRoute: () => MedicoRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -76,10 +124,17 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/register': typeof RegisterRoute
+  '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/dashboard': typeof AppDashboardRoute
+  '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/medico/pedidos': typeof MedicoMedicoPedidosRoute
+  '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/medico/': typeof MedicoMedicoIndexRoute
+  '/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
+  '/medico/catalogo/': typeof MedicoMedicoCatalogoIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -87,23 +142,38 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/register': typeof RegisterRoute
+  '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/dashboard': typeof AppDashboardRoute
+  '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/medico/pedidos': typeof MedicoMedicoPedidosRoute
+  '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/medico': typeof MedicoMedicoIndexRoute
+  '/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
+  '/medico/catalogo': typeof MedicoMedicoCatalogoIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/_medico': typeof MedicoRouteWithChildren
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/register': typeof RegisterRoute
+  '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_medico/medico/pedidos': typeof MedicoMedicoPedidosRoute
+  '/_medico/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/_medico/medico/': typeof MedicoMedicoIndexRoute
+  '/_medico/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
+  '/_medico/medico/catalogo/': typeof MedicoMedicoCatalogoIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,10 +183,17 @@ export interface FileRouteTypes {
     | '/login'
     | '/redefinir-senha'
     | '/register'
+    | '/register-medico'
     | '/verificar-email'
     | '/dashboard'
+    | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/medico/pedidos'
+    | '/medico/pendente'
+    | '/medico/'
+    | '/medico/catalogo/$id'
+    | '/medico/catalogo/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -124,31 +201,48 @@ export interface FileRouteTypes {
     | '/login'
     | '/redefinir-senha'
     | '/register'
+    | '/register-medico'
     | '/verificar-email'
     | '/dashboard'
+    | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/medico/pedidos'
+    | '/medico/pendente'
+    | '/medico'
+    | '/medico/catalogo/$id'
+    | '/medico/catalogo'
   id:
     | '__root__'
     | '/'
     | '/_app'
+    | '/_medico'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
     | '/register'
+    | '/register-medico'
     | '/verificar-email'
     | '/_app/dashboard'
+    | '/_app/medicos-pendentes'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/_medico/medico/pedidos'
+    | '/_medico/medico/pendente'
+    | '/_medico/medico/'
+    | '/_medico/medico/catalogo/$id'
+    | '/_medico/medico/catalogo/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  MedicoRoute: typeof MedicoRouteWithChildren
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
   RegisterRoute: typeof RegisterRoute
+  RegisterMedicoRoute: typeof RegisterMedicoRoute
   VerificarEmailRoute: typeof VerificarEmailRoute
 }
 
@@ -159,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/verificar-email'
       fullPath: '/verificar-email'
       preLoaderRoute: typeof VerificarEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register-medico': {
+      id: '/register-medico'
+      path: '/register-medico'
+      fullPath: '/register-medico'
+      preLoaderRoute: typeof RegisterMedicoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -189,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_medico': {
+      id: '/_medico'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof MedicoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -217,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/medicos-pendentes': {
+      id: '/_app/medicos-pendentes'
+      path: '/medicos-pendentes'
+      fullPath: '/medicos-pendentes'
+      preLoaderRoute: typeof AppMedicosPendentesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -224,30 +339,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_medico/medico/': {
+      id: '/_medico/medico/'
+      path: '/medico'
+      fullPath: '/medico/'
+      preLoaderRoute: typeof MedicoMedicoIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/pendente': {
+      id: '/_medico/medico/pendente'
+      path: '/medico/pendente'
+      fullPath: '/medico/pendente'
+      preLoaderRoute: typeof MedicoMedicoPendenteRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/pedidos': {
+      id: '/_medico/medico/pedidos'
+      path: '/medico/pedidos'
+      fullPath: '/medico/pedidos'
+      preLoaderRoute: typeof MedicoMedicoPedidosRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/catalogo/': {
+      id: '/_medico/medico/catalogo/'
+      path: '/medico/catalogo'
+      fullPath: '/medico/catalogo/'
+      preLoaderRoute: typeof MedicoMedicoCatalogoIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/catalogo/$id': {
+      id: '/_medico/medico/catalogo/$id'
+      path: '/medico/catalogo/$id'
+      fullPath: '/medico/catalogo/$id'
+      preLoaderRoute: typeof MedicoMedicoCatalogoIdRouteImport
+      parentRoute: typeof MedicoRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppMedicosPendentesRoute: typeof AppMedicosPendentesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppMedicosPendentesRoute: AppMedicosPendentesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface MedicoRouteChildren {
+  MedicoMedicoPedidosRoute: typeof MedicoMedicoPedidosRoute
+  MedicoMedicoPendenteRoute: typeof MedicoMedicoPendenteRoute
+  MedicoMedicoIndexRoute: typeof MedicoMedicoIndexRoute
+  MedicoMedicoCatalogoIdRoute: typeof MedicoMedicoCatalogoIdRoute
+  MedicoMedicoCatalogoIndexRoute: typeof MedicoMedicoCatalogoIndexRoute
+}
+
+const MedicoRouteChildren: MedicoRouteChildren = {
+  MedicoMedicoPedidosRoute: MedicoMedicoPedidosRoute,
+  MedicoMedicoPendenteRoute: MedicoMedicoPendenteRoute,
+  MedicoMedicoIndexRoute: MedicoMedicoIndexRoute,
+  MedicoMedicoCatalogoIdRoute: MedicoMedicoCatalogoIdRoute,
+  MedicoMedicoCatalogoIndexRoute: MedicoMedicoCatalogoIndexRoute,
+}
+
+const MedicoRouteWithChildren =
+  MedicoRoute._addFileChildren(MedicoRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  MedicoRoute: MedicoRouteWithChildren,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
   RegisterRoute: RegisterRoute,
+  RegisterMedicoRoute: RegisterMedicoRoute,
   VerificarEmailRoute: VerificarEmailRoute,
 }
 export const routeTree = rootRouteImport
