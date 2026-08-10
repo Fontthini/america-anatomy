@@ -17,6 +17,7 @@ export type CatalogItemResponse = {
   description: string | null;
   imageUrl: string | null;
   price: string | null;
+  category: string | null;
   startsAt: string | null;
   endsAt: string | null;
   location: string | null;

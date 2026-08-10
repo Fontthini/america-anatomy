@@ -50,6 +50,14 @@ const NOTIFICATION_CONTENT: Record<NotificationType, NotificationContent> = {
     title: "Pedido confirmado",
     body: "Seu pedido/inscrição foi confirmado com sucesso.",
   },
+  LEAD_ASSIGNED: {
+    title: "Novo lead atribuído",
+    body: "Um novo médico foi atribuído a você no funil.",
+  },
+  LEAD_REVIEW_REQUESTED: {
+    title: "Aprovação solicitada",
+    body: "Um vendedor solicitou sua decisão sobre um cadastro de médico.",
+  },
 };
 
 /**

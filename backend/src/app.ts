@@ -9,6 +9,9 @@ import { notificationsRoutes } from "./modules/notifications/notifications.route
 import { doctorsRoutes } from "./modules/doctors/doctors.routes.js";
 import { catalogRoutes } from "./modules/catalog/catalog.routes.js";
 import { ordersRoutes } from "./modules/orders/orders.routes.js";
+import { crmRoutes } from "./modules/crm/crm.routes.js";
+import { referralsRoutes } from "./modules/referrals/referrals.routes.js";
+import { financeRoutes } from "./modules/finance/finance.routes.js";
 
 export async function buildApp() {
   const isDev = process.env["NODE_ENV"] !== "production";
@@ -41,6 +44,9 @@ export async function buildApp() {
   await app.register(doctorsRoutes);
   await app.register(catalogRoutes);
   await app.register(ordersRoutes);
+  await app.register(crmRoutes);
+  await app.register(referralsRoutes);
+  await app.register(financeRoutes);
 
   return app;
 }

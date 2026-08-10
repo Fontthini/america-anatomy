@@ -27,7 +27,7 @@ Shape retornado em toda resposta que contém um usuário. Campos `null` são **o
   email: string;
   avatarUrl?: string;           // omitido se não definido
   bio?: string;                 // omitido se não definido
-  role: "DOCTOR" | "STAFF" | "ADMIN";  // padrão "DOCTOR"
+  role: "DOCTOR" | "SALES_REP" | "MANAGER" | "ADMIN";  // padrão "DOCTOR"
   emailVerified: boolean;       // false até confirmar e-mail
   emailNotifications: boolean;  // preferência de notificação por e-mail (padrão true)
   productUpdates: boolean;      // preferência de novidades do produto (padrão false)
@@ -75,6 +75,11 @@ Todos os erros seguem este shape:
 | `CATALOG_ITEM_NOT_FOUND` | 404 | Item de catálogo inexistente, ou não `PUBLISHED` para quem não é staff/admin |
 | `COURSE_FULL` | 409 | Sem vagas para o curso |
 | `SEMINAR_FULL` | 409 | Sem vagas para o seminário |
+| `LEAD_NOT_FOUND` | 404 | `DoctorProfile` (lead) inexistente |
+| `LEAD_ALREADY_ASSIGNED` | 409 | Lead já tem vendedor responsável (`claimLead`) |
+| `REFERRAL_NOT_FOUND` | 404 | Indicação inexistente |
+| `COMMISSION_ALREADY_PAID` | 409 | Comissão desta indicação já foi lançada (lançamento é único) |
+| `FINANCIAL_ENTRY_NOT_FOUND` | 404 | Lançamento financeiro inexistente |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -388,7 +393,7 @@ Retorna as últimas 100 notificações do usuário, mais recentes primeiro.
 ```typescript
 {
   id: string;
-  type: "WELCOME" | "EMAIL_VERIFIED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PROFILE_UPDATED" | "AVATAR_UPDATED" | "DOCTOR_REGISTRATION_RECEIVED" | "NEW_DOCTOR_PENDING" | "DOCTOR_APPROVED" | "DOCTOR_REJECTED" | "ORDER_CREATED";
+  type: "WELCOME" | "EMAIL_VERIFIED" | "PASSWORD_CHANGED" | "PASSWORD_RESET_REQUESTED" | "PROFILE_UPDATED" | "AVATAR_UPDATED" | "DOCTOR_REGISTRATION_RECEIVED" | "NEW_DOCTOR_PENDING" | "DOCTOR_APPROVED" | "DOCTOR_REJECTED" | "ORDER_CREATED" | "LEAD_ASSIGNED" | "LEAD_REVIEW_REQUESTED";
   title: string;
   body: string;
   readAt: string | null;   // ISO 8601, null se não lida
@@ -470,7 +475,7 @@ Retorna o `DoctorProfile` do médico autenticado (inclui `approvalStatus`) — u
 
 Lista médicos, opcionalmente filtrados por status. `status` omitido retorna todos.
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Response `200`:** array de `DoctorProfileResponse`
 
@@ -500,7 +505,7 @@ Lista médicos, opcionalmente filtrados por status. `status` omitido retorna tod
 
 Aprova o médico. `:id` é o `User.id` do médico (não o id do `DoctorProfile`). Envia e-mail e dispara notificação `DOCTOR_APPROVED`.
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Response `200`:** `DoctorProfileResponse` atualizado
 
@@ -512,7 +517,7 @@ Aprova o médico. `:id` é o `User.id` do médico (não o id do `DoctorProfile`)
 
 Rejeita o médico, com motivo opcional. Envia e-mail e dispara notificação `DOCTOR_REJECTED`.
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Request body:**
 ```json
@@ -575,7 +580,7 @@ Catálogo unificado — um único recurso com `type: "PRODUCT" | "COURSE" | "SEM
 
 Cria item de catálogo (sempre `status: "DRAFT"` — publicar é uma atualização separada via `PATCH`). Body é uma união discriminada por `type`.
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Request body (`type: "PRODUCT"`):**
 ```json
@@ -597,7 +602,7 @@ Cria item de catálogo (sempre `status: "DRAFT"` — publicar é uma atualizaç�
 
 Atualização parcial (inclui trocar `status` para publicar/arquivar).
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Response `200`:** `CatalogItemResponse`
 
@@ -609,7 +614,7 @@ Atualização parcial (inclui trocar `status` para publicar/arquivar).
 
 Atalho para `status: "ARCHIVED"`. Itens com pedidos nunca podem ser excluídos (FK `onDelete: Restrict`) — arquivar é a forma correta de "remover" um item do catálogo ativo.
 
-**Auth:** `Authorization: Bearer <access_token>`, role `STAFF` ou `ADMIN`
+**Auth:** `Authorization: Bearer <access_token>`, role `MANAGER` ou `ADMIN`
 
 **Response `200`:** `CatalogItemResponse`
 
@@ -664,6 +669,183 @@ Lista os pedidos do médico autenticado, mais recentes primeiro.
 
 ---
 
+## CRM (`/api/crm/`) — funil de vendas
+
+Fase 2. O estágio do funil vive direto no `DoctorProfile` (não é uma entidade separada), mesma ideia do sistema irmão "peptideo". Papéis internos: `SALES_REP` (vendedor — só vê os próprios leads + os sem vendedor), `MANAGER`/`ADMIN` (veem tudo).
+
+**`FunnelStage`:** `NEW | FIRST_CONTACT | AWAITING_RESPONSE | INTERESTED | PAYMENT_LINK_SENT | CUSTOMER | LOST`
+
+Novo médico cadastrado é **atribuído automaticamente** a um vendedor (o com menos leads no momento — equivalente ao round-robin do peptideo, mas autoequilibrado em vez de um cursor rotativo). Vendedor **não decide** aprovação/rejeição de médico diretamente — só pode *solicitar* uma decisão (`approvalStatus` vira `IN_REVIEW`); só `MANAGER`/`ADMIN` finalizam via `PATCH /api/doctors/:id/approve|reject` (módulo Médicos).
+
+### `GET /api/crm/leads?funnelStage=&scope=mine|unassigned|all`
+
+**Auth:** `Authorization: Bearer <access_token>`, role `SALES_REP`, `MANAGER` ou `ADMIN`. Para `SALES_REP`, o scoping é sempre aplicado no servidor (nunca retorna leads de outro vendedor, mesmo pedindo `scope=all`).
+
+**Response `200`:** array de `LeadResponse`
+```typescript
+{
+  id: string;                    // DoctorProfile.id
+  userId: string;
+  name: string; email: string;
+  crm: string | null; specialty: string | null; clinicName: string | null; city: string | null; state: string | null;
+  approvalStatus: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
+  funnelStage: FunnelStage;
+  lossReason: string | null;
+  assignedSalesRepId: string | null;
+  assignedSalesRepName: string | null;
+  reviewRequestedAction: "APPROVE" | "REJECT" | null;
+  createdAt: string;
+}[]
+```
+
+---
+
+### `PATCH /api/crm/leads/:id/funnel`
+
+Move o lead pra outro estágio do funil. `:id` é o `DoctorProfile.id`. `lossReason` só é salvo quando `funnelStage: "LOST"` (limpo automaticamente nos demais estágios).
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`. Vendedor só move leads atribuídos a ele.
+
+**Request body:**
+```json
+{ "funnelStage": "INTERESTED", "lossReason": "string" }
+```
+
+**Response `200`:** `LeadResponse`
+
+**Erros:** `403 FORBIDDEN` (lead de outro vendedor), `404 LEAD_NOT_FOUND`
+
+---
+
+### `PATCH /api/crm/leads/:id/claim`
+
+Vendedor assume um lead sem vendedor atribuído.
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`
+
+**Response `200`:** `LeadResponse`
+
+**Erros:** `409 LEAD_ALREADY_ASSIGNED`, `404 LEAD_NOT_FOUND`
+
+---
+
+### `PATCH /api/crm/leads/:id/request-review`
+
+Vendedor solicita a um gerente/admin que aprove ou rejeite o cadastro do médico (não decide diretamente). Marca `approvalStatus: "IN_REVIEW"` e dispara `LEAD_REVIEW_REQUESTED` pra todos `MANAGER`/`ADMIN`.
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`
+
+**Request body:**
+```json
+{ "action": "APPROVE" }
+```
+
+**Response `200`:** `LeadResponse`
+
+---
+
+## Indicações (`/api/referrals/`)
+
+Um médico aprovado indica um **paciente** ou **outro médico**. Comissão é lançamento manual único (não recorrente/percentual) que **gera automaticamente uma saída no financeiro**.
+
+**`ReferralType`:** `PATIENT | DOCTOR`
+**Status (paciente):** `IN_PROGRESS | NEGOTIATION | PAID | CANCELLED`
+**Status (médico):** `NEW | CONTACTED | CONVERTED | REJECTED`
+
+> Diferença deliberada do peptideo: lá a indicação é feita via link público com token (`/indicar/{token}`), sem login. Aqui o médico envia de dentro da área autenticada (`POST /api/referrals`) — evita manter um segundo sistema de autenticação só pra esse formulário. O compartilhamento por WhatsApp continua existindo no front, só que como texto pré-preenchido, não como link rastreável.
+
+### `POST /api/referrals`
+
+**Auth:** role `DOCTOR` + `requireApproved`
+
+**Request body (`type: "PATIENT"`):**
+```json
+{ "type": "PATIENT", "firstName": "string", "lastName": "string", "whatsapp": "string", "email": "string", "address": "string", "notes": "string" }
+```
+**Request body (`type: "DOCTOR"`):** igual + `"crm": "string"` (obrigatório)
+
+**Response `201`:** `ReferralResponse`
+```typescript
+{
+  id: string; referringDoctorProfileId: string; referringDoctorName: string;
+  type: "PATIENT" | "DOCTOR";
+  firstName: string; lastName: string; whatsapp: string; email: string | null; address: string | null;
+  crm: string | null;
+  patientStatus: "IN_PROGRESS" | "NEGOTIATION" | "PAID" | "CANCELLED" | null;
+  doctorStatus: "NEW" | "CONTACTED" | "CONVERTED" | "REJECTED" | null;
+  notes: string | null;
+  commissionAmount: string | null;
+  commissionPaid: boolean;
+  createdAt: string;
+}
+```
+
+---
+
+### `GET /api/referrals/me`
+
+Indicações feitas pelo próprio médico autenticado.
+
+**Auth:** role `DOCTOR` + `requireApproved` — **Response `200`:** array de `ReferralResponse`
+
+---
+
+### `GET /api/referrals?type=`
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`. Vendedor só vê indicações de médicos atribuídos a ele (`assignedSalesRepId`).
+
+---
+
+### `PATCH /api/referrals/:id/status`
+
+Atualiza `patientStatus` ou `doctorStatus` (o campo certo é escolhido pelo `type` da indicação; enviar um status do tipo errado retorna `400 VALIDATION_ERROR`).
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN` (vendedor só nas suas)
+
+**Request body:** `{ "status": "NEGOTIATION" }`
+
+---
+
+### `PUT /api/referrals/:id/commission`
+
+Lança a comissão — **uma única vez** (409 se já paga). Cria automaticamente um `FinancialEntry` tipo `EXPENSE`, categoria `"Comissão"`.
+
+**Auth:** role `MANAGER`/`ADMIN` (decisão financeira — vendedor não lança)
+
+**Request body:** `{ "amount": 150 }`
+
+**Erros:** `409 COMMISSION_ALREADY_PAID`
+
+---
+
+## Financeiro (`/api/finance/`)
+
+Ledger simples (sem contas/categorias fixas em enum — categoria é texto livre, com uma lista sugerida gerenciável). Restrito a `MANAGER`/`ADMIN` — vendedor não vê financeiro (mesma regra do peptideo).
+
+**Dois gatilhos automáticos** (sem ação manual):
+1. **Pedido criado** (`POST /api/orders`) → entrada automática, categoria `"PEDIDO PAGO"` (sem gateway de pagamento ainda na Fase 2, pedido confirmado já conta como pago).
+2. **Comissão lançada** (`PUT /api/referrals/:id/commission`) → saída automática, categoria `"Comissão"`.
+
+### `GET /api/finance/entries?type=&from=&to=`
+**Auth:** `MANAGER`/`ADMIN` — **Response `200`:** array de `FinancialEntryResponse`
+```typescript
+{ id: string; type: "INCOME" | "EXPENSE"; category: string; description: string; amount: string; entryDate: string; receiptUrl: string | null; createdByUserId: string | null; createdAt: string; }[]
+```
+
+### `GET /api/finance/summary`
+**Auth:** `MANAGER`/`ADMIN` — **Response `200`:**
+```typescript
+{ totalIncome: string; totalExpense: string; balance: string; byCategoryIncome: { category: string; total: string }[]; byCategoryExpense: { category: string; total: string }[]; }
+```
+
+### `POST /api/finance/entries` · `PATCH /api/finance/entries/:id` · `DELETE /api/finance/entries/:id`
+CRUD manual de lançamentos. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ type, category, description, amount, entryDate, receiptUrl? }`; `PATCH` aceita subconjunto parcial.
+
+### `GET /api/finance/categories` · `POST /api/finance/categories`
+Lista/cria categorias sugeridas (não são um enum fixo — `FinancialEntry.category` é texto livre; isto só alimenta autocomplete no front). **Auth:** `MANAGER`/`ADMIN`.
+
+---
+
 ## Tipos de notificação e quando são geradas
 
 | Tipo | Quando é disparada |
@@ -675,16 +857,24 @@ Lista os pedidos do médico autenticado, mais recentes primeiro.
 | `PROFILE_UPDATED` | Ao atualizar perfil (`PATCH /api/users/me`) |
 | `AVATAR_UPDATED` | Ao trocar avatar (`POST /api/users/me/avatar`) |
 | `DOCTOR_REGISTRATION_RECEIVED` | Ao médico se cadastrar (`POST /api/doctors/register`), para o próprio médico |
-| `NEW_DOCTOR_PENDING` | Ao médico se cadastrar, fan-out para todos os `STAFF`/`ADMIN` |
+| `NEW_DOCTOR_PENDING` | Ao médico se cadastrar, fan-out para todos os `MANAGER`/`ADMIN` |
 | `DOCTOR_APPROVED` | Ao aprovar médico (`PATCH /api/doctors/:id/approve`) |
 | `DOCTOR_REJECTED` | Ao rejeitar médico (`PATCH /api/doctors/:id/reject`) |
 | `ORDER_CREATED` | Ao criar pedido (`POST /api/orders`) |
+| `LEAD_ASSIGNED` | Ao médico se cadastrar, pro vendedor escolhido no round-robin |
+| `LEAD_REVIEW_REQUESTED` | Ao vendedor solicitar revisão (`PATCH /api/crm/leads/:id/request-review`), fan-out pra `MANAGER`/`ADMIN` |
+
+---
+
+## Auditoria (`AuditLog`)
+
+Toda mutação de CRM/financeiro/aprovação dispara um registro fire-and-forget em `AuditLog` (`actorLabel`, `action`, `detail`, `createdAt`) — sem endpoint de leitura na Fase 2 (só a tabela existe; uma tela de histórico fica pra Fase 3 se for necessário).
 
 ---
 
 ## Endpoints futuros (não implementados)
 
-Fase 2 (CRM): kanban de funil de vendas, indicações/parcerias, financeiro (transações ligadas a `Order`), portal de equipe.
+Fase 3 (refinamentos): tela de auditoria, upload de comprovante financeiro (hoje é só `receiptUrl` texto), link público rastreável de indicação, comissão percentual automática.
 
 | Domínio | Método | Rota | Descrição |
 |---------|--------|------|-----------|

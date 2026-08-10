@@ -16,17 +16,17 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
 
   app.post(
     "/api/catalog",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleCreateCatalogItem,
   );
   app.patch(
     "/api/catalog/:id",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleUpdateCatalogItem,
   );
   app.patch(
     "/api/catalog/:id/archive",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleArchiveCatalogItem,
   );
 }

@@ -19,17 +19,17 @@ export async function doctorsRoutes(app: FastifyInstance): Promise<void> {
   // Staff/Admin — gestão de aprovação
   app.get(
     "/api/doctors",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleListDoctors,
   );
   app.patch(
     "/api/doctors/:id/approve",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleApproveDoctor,
   );
   app.patch(
     "/api/doctors/:id/reject",
-    { preHandler: [authenticate, requireRole("STAFF", "ADMIN")] },
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleRejectDoctor,
   );
 }

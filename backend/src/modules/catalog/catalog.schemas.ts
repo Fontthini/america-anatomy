@@ -6,6 +6,7 @@ const baseFields = {
   description: z.string().max(2000).optional(),
   imageUrl: z.string().url("URL de imagem inválida.").optional(),
   price: z.number().nonnegative().optional(),
+  category: z.string().max(60).optional(),
 };
 
 const eventFields = {
@@ -32,6 +33,7 @@ export const updateCatalogItemSchema = z.object({
   description: z.string().max(2000).optional(),
   imageUrl: z.string().url().optional(),
   price: z.number().nonnegative().optional(),
+  category: z.string().max(60).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
   startsAt: z.coerce.date().optional(),
   endsAt: z.coerce.date().optional(),
@@ -60,6 +62,7 @@ export type CatalogItemResponse = {
   description: string | null;
   imageUrl: string | null;
   price: string | null;
+  category: string | null;
   startsAt: string | null;
   endsAt: string | null;
   location: string | null;

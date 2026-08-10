@@ -1,8 +1,9 @@
-export type Role = "DOCTOR" | "STAFF" | "ADMIN";
+export type Role = "DOCTOR" | "SALES_REP" | "MANAGER" | "ADMIN";
 
 export const roleLabels: Record<Role, string> = {
   DOCTOR: "Médico",
-  STAFF: "Equipe",
+  SALES_REP: "Vendedor(a)",
+  MANAGER: "Gerente",
   ADMIN: "Admin",
 };
 

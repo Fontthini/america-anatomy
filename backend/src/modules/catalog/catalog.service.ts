@@ -38,6 +38,7 @@ function toCatalogItemResponse(item: CatalogItem, confirmedOrders: number): Cata
     description: item.description,
     imageUrl: item.imageUrl,
     price: item.price ? item.price.toString() : null,
+    category: item.category,
     startsAt: item.startsAt ? item.startsAt.toISOString() : null,
     endsAt: item.endsAt ? item.endsAt.toISOString() : null,
     location: item.location,
@@ -96,6 +97,7 @@ export async function createCatalogItem(input: CreateCatalogItemInput): Promise<
       description: input.description,
       imageUrl: input.imageUrl,
       price: input.price,
+      category: input.category,
       ...(input.type === "PRODUCT"
         ? { sku: input.sku, stockQty: input.stockQty }
         : {

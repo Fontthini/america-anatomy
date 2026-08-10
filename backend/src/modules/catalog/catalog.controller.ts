@@ -13,7 +13,7 @@ import {
 } from "./catalog.service.js";
 
 function isStaffOrAdmin(req: FastifyRequest): boolean {
-  return req.user.role === "STAFF" || req.user.role === "ADMIN";
+  return req.user.role === "MANAGER" || req.user.role === "ADMIN";
 }
 
 export async function handleListCatalogItems(req: FastifyRequest, reply: FastifyReply): Promise<void> {

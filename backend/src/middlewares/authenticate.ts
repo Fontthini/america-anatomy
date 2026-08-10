@@ -9,6 +9,7 @@ declare module "fastify" {
     user: {
       id: string;
       email: string;
+      name: string;
       role: Role;
       /** Só existe quando role === "DOCTOR". Ausente = sem DoctorProfile (nunca considerado aprovado). */
       doctorApprovalStatus?: ApprovalStatus;
@@ -44,6 +45,7 @@ export async function authenticate(req: FastifyRequest, reply: FastifyReply): Pr
     req.user = {
       id: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
       ...(user.doctorProfile ? { doctorApprovalStatus: user.doctorProfile.approvalStatus } : {}),
     };

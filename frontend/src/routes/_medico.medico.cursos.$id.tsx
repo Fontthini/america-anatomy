@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, Package } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -10,11 +10,11 @@ import { apiGetCatalogItem } from "../lib/api/catalog";
 import { apiCreateOrder } from "../lib/api/orders";
 import { ApiError } from "../lib/api/client";
 
-export const Route = createFileRoute("/_medico/medico/catalogo/$id")({
-  component: CatalogItemPage,
+export const Route = createFileRoute("/_medico/medico/cursos/$id")({
+  component: CourseItemPage,
 });
 
-const typeLabels: Record<string, string> = { PRODUCT: "Produto", COURSE: "Curso", SEMINAR: "Seminário" };
+const typeLabels: Record<string, string> = { COURSE: "Curso", SEMINAR: "Seminário" };
 
 function formatPrice(price: string | null): string {
   if (!price) return "Sob consulta";
@@ -26,7 +26,7 @@ function formatDateTime(iso: string | null): string | null {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function CatalogItemPage() {
+function CourseItemPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -42,7 +42,7 @@ function CatalogItemPage() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["myOrders"] });
       void queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      toast({ kind: "success", title: "Pedido confirmado", description: "Você já pode ver os detalhes em Meus Pedidos." });
+      toast({ kind: "success", title: "Inscrição confirmada", description: "Você já pode ver os detalhes em Meus Pedidos." });
       void navigate({ to: "/medico/pedidos" });
     },
     onError: (err) => {
@@ -65,18 +65,17 @@ function CatalogItemPage() {
   if (!item) {
     return (
       <PageContainer>
-        <p className="text-sm text-fg-muted">Item não encontrado.</p>
+        <p className="text-sm text-fg-muted">Curso não encontrado.</p>
       </PageContainer>
     );
   }
 
-  const isEvent = item.type === "COURSE" || item.type === "SEMINAR";
   const soldOut = item.vagasRestantes !== null && item.vagasRestantes <= 0;
 
   return (
     <PageContainer className="max-w-3xl">
-      <Link to="/medico/catalogo" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
-        <ArrowLeft size={14} /> Voltar ao catálogo
+      <Link to="/medico/cursos" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
+        <ArrowLeft size={14} /> Voltar aos cursos
       </Link>
 
       <Card>
@@ -96,31 +95,22 @@ function CatalogItemPage() {
           </div>
 
           <div className="space-y-2 text-sm text-fg-muted">
-            {isEvent && item.startsAt && (
+            {item.startsAt && (
               <p className="flex items-center gap-2">
                 <Calendar size={14} /> {formatDateTime(item.startsAt)}
               </p>
             )}
-            {isEvent && item.location && (
+            {item.location && (
               <p className="flex items-center gap-2">
                 <MapPin size={14} /> {item.isOnline ? "Online" : item.location}
-              </p>
-            )}
-            {item.type === "PRODUCT" && item.stockQty !== null && (
-              <p className="flex items-center gap-2">
-                <Package size={14} /> {item.stockQty} em estoque
               </p>
             )}
           </div>
 
           <div className="flex items-center justify-between border-t border-line pt-5">
             <span className="font-display text-2xl text-fg">{formatPrice(item.price)}</span>
-            <Button
-              onClick={() => orderMutation.mutate()}
-              loading={orderMutation.isPending}
-              disabled={soldOut}
-            >
-              {isEvent ? "Inscrever-se" : "Comprar"}
+            <Button onClick={() => orderMutation.mutate()} loading={orderMutation.isPending} disabled={soldOut}>
+              Inscrever-se
             </Button>
           </div>
         </CardBody>

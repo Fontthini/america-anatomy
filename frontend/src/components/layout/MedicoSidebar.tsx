@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, BookOpen, Package2, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { cn } from "../../lib/cn";
@@ -8,8 +8,10 @@ type Item = { to: string; label: string; icon: typeof LayoutDashboard };
 
 const items: Item[] = [
   { to: "/medico", label: "Início", icon: LayoutDashboard },
-  { to: "/medico/catalogo", label: "Catálogo", icon: BookOpen },
+  { to: "/medico/loja", label: "Loja", icon: ShoppingCart },
+  { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
+  { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];
 
 export function MedicoSidebar({

@@ -1,12 +1,14 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LayoutDashboard, BookOpen, Package2, X } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, X } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 const items = [
   { to: "/medico", label: "Início", icon: LayoutDashboard },
-  { to: "/medico/catalogo", label: "Catálogo", icon: BookOpen },
+  { to: "/medico/loja", label: "Loja", icon: ShoppingCart },
+  { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
+  { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];
 
 export function MedicoMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {

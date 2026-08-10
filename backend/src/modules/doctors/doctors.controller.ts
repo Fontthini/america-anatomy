@@ -36,13 +36,13 @@ export async function handleListDoctors(req: FastifyRequest, reply: FastifyReply
 
 export async function handleApproveDoctor(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { id } = req.params as { id: string };
-  const profile = await approveDoctor(req.user.id, id);
+  const profile = await approveDoctor({ id: req.user.id, name: req.user.name, role: req.user.role }, id);
   reply.status(200).send(profile);
 }
 
 export async function handleRejectDoctor(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { id } = req.params as { id: string };
   const input = rejectDoctorSchema.parse(req.body ?? {});
-  const profile = await rejectDoctor(id, input);
+  const profile = await rejectDoctor({ id: req.user.id, name: req.user.name, role: req.user.role }, id, input);
   reply.status(200).send(profile);
 }

@@ -12,7 +12,8 @@ datasource db {
 
 enum Role {
   DOCTOR
-  STAFF
+  SALES_REP
+  MANAGER
   ADMIN
 }
 
@@ -38,12 +39,31 @@ model User {
   notifications      Notification[]
   doctorProfile      DoctorProfile?  @relation("DoctorProfileUser")
   approvedDoctors     DoctorProfile[] @relation("DoctorApprovals")
+  assignedLeads       DoctorProfile[] @relation("AssignedSalesRep")
+  auditLogs           AuditLog[]
+  financialEntries    FinancialEntry[]
 }
 
 enum ApprovalStatus {
   PENDING
+  IN_REVIEW
   APPROVED
   REJECTED
+}
+
+enum FunnelStage {
+  NEW
+  FIRST_CONTACT
+  AWAITING_RESPONSE
+  INTERESTED
+  PAYMENT_LINK_SENT
+  CUSTOMER
+  LOST
+}
+
+enum ReviewAction {
+  APPROVE
+  REJECT
 }
 
 model DoctorProfile {
@@ -60,14 +80,111 @@ model DoctorProfile {
   approvedByUserId String?
   rejectedAt       DateTime?
   rejectionReason  String?
+
+  // Funil de vendas — mesma ideia do peptideo: o estágio vive direto no cadastro do médico.
+  funnelStage           FunnelStage   @default(NEW)
+  lossReason            String?
+  assignedSalesRepId    String?
+  // Preenchido quando um SALES_REP solicita decisão (aprovar/rejeitar) de um MANAGER/ADMIN.
+  reviewRequestedAction ReviewAction?
+
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  user       User    @relation("DoctorProfileUser", fields: [userId], references: [id], onDelete: Cascade)
-  approvedBy User?   @relation("DoctorApprovals", fields: [approvedByUserId], references: [id])
-  orders     Order[]
+  user            User      @relation("DoctorProfileUser", fields: [userId], references: [id], onDelete: Cascade)
+  approvedBy      User?     @relation("DoctorApprovals", fields: [approvedByUserId], references: [id])
+  assignedSalesRep User?    @relation("AssignedSalesRep", fields: [assignedSalesRepId], references: [id])
+  orders          Order[]
+  referrals       Referral[]
 
   @@index([approvalStatus])
+  @@index([funnelStage])
+  @@index([assignedSalesRepId])
+}
+
+enum ReferralType {
+  PATIENT
+  DOCTOR
+}
+
+enum ReferralPatientStatus {
+  IN_PROGRESS
+  NEGOTIATION
+  PAID
+  CANCELLED
+}
+
+enum ReferralDoctorStatus {
+  NEW
+  CONTACTED
+  CONVERTED
+  REJECTED
+}
+
+model Referral {
+  id                       String                  @id @default(cuid())
+  referringDoctorProfileId String
+  type                     ReferralType
+  firstName                String
+  lastName                 String
+  whatsapp                 String
+  email                    String?
+  address                  String?
+  crm                      String? // apenas type = DOCTOR
+  patientStatus            ReferralPatientStatus? // apenas type = PATIENT
+  doctorStatus             ReferralDoctorStatus? // apenas type = DOCTOR
+  notes                    String?
+  commissionAmount         Decimal?                @db.Decimal(10, 2)
+  commissionPaid           Boolean                 @default(false)
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
+
+  referringDoctorProfile DoctorProfile @relation(fields: [referringDoctorProfileId], references: [id], onDelete: Cascade)
+
+  @@index([type])
+  @@index([referringDoctorProfileId])
+}
+
+enum FinancialEntryType {
+  INCOME
+  EXPENSE
+}
+
+model FinancialEntry {
+  id              String             @id @default(cuid())
+  type            FinancialEntryType
+  category        String
+  description     String
+  amount          Decimal            @db.Decimal(10, 2)
+  entryDate       DateTime
+  receiptUrl      String?
+  createdByUserId String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  createdBy User? @relation(fields: [createdByUserId], references: [id])
+
+  @@index([type])
+  @@index([entryDate])
+}
+
+model FinancialCategory {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  actorLabel  String
+  action      String
+  detail      String?
+  createdAt   DateTime @default(now())
+
+  actor User? @relation(fields: [actorUserId], references: [id])
+
+  @@index([createdAt])
 }
 
 enum CatalogItemType {
@@ -91,6 +208,8 @@ model CatalogItem {
   description String?
   imageUrl    String?
   price       Decimal?          @db.Decimal(10, 2)
+  // Categoria livre (ex.: "Emagrecimento", "Anatomia Óssea") — só usada na Loja (PRODUCT), pills de filtro.
+  category    String?
 
   // COURSE / SEMINAR apenas
   startsAt DateTime?
@@ -170,6 +289,8 @@ enum NotificationType {
   DOCTOR_APPROVED
   DOCTOR_REJECTED
   ORDER_CREATED
+  LEAD_ASSIGNED
+  LEAD_REVIEW_REQUESTED
 }
 
 model Notification {

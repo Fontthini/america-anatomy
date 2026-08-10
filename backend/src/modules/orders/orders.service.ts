@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
+import { recordAutoFinancialEntry } from "../finance/finance.service.js";
 import type { CreateOrderInput, OrderResponse } from "./orders.schemas.js";
 import type { Order, CatalogItem } from "@prisma/client";
 
@@ -60,6 +61,21 @@ export async function createOrder(userId: string, input: CreateOrderInput): Prom
   });
 
   void createNotification(userId, NotificationType.ORDER_CREATED);
+
+  // Sem gateway de pagamento ainda: pedido confirmado já conta como "pago" pra
+  // efeitos de financeiro e funil, igual o gatilho do peptideo (pedido pago → entrada + lead vira cliente).
+  if (order.unitPrice) {
+    void recordAutoFinancialEntry({
+      type: "INCOME",
+      category: "PEDIDO PAGO",
+      description: `Pedido pago — ${order.catalogItem.title} (${order.quantity}x)`,
+      amount: Number(order.unitPrice) * order.quantity,
+    });
+  }
+  void prisma.doctorProfile.updateMany({
+    where: { id: doctorProfileId, funnelStage: { not: "CUSTOMER" } },
+    data: { funnelStage: "CUSTOMER" },
+  });
 
   return toOrderResponse(order);
 }

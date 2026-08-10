@@ -1,29 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { MapPin, Calendar, Package, ArrowRight } from "lucide-react";
+import { MapPin, Calendar, ArrowRight } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { cn } from "../lib/cn";
 import { apiListCatalogItems, type CatalogItemType } from "../lib/api/catalog";
 
-export const Route = createFileRoute("/_medico/medico/catalogo/")({
-  component: CatalogPage,
+export const Route = createFileRoute("/_medico/medico/cursos/")({
+  component: CoursesPage,
 });
 
 const filters: { value: CatalogItemType | "ALL"; label: string }[] = [
   { value: "ALL", label: "Todos" },
-  { value: "PRODUCT", label: "Produtos" },
   { value: "COURSE", label: "Cursos" },
   { value: "SEMINAR", label: "Seminários" },
 ];
 
-const typeLabels: Record<CatalogItemType, string> = {
-  PRODUCT: "Produto",
-  COURSE: "Curso",
-  SEMINAR: "Seminário",
-};
+const typeLabels: Record<string, string> = { COURSE: "Curso", SEMINAR: "Seminário" };
 
 function formatPrice(price: string | null): string {
   if (!price) return "Sob consulta";
@@ -35,7 +30,7 @@ function formatDate(iso: string | null): string | null {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-function CatalogPage() {
+function CoursesPage() {
   const [filter, setFilter] = useState<CatalogItemType | "ALL">("ALL");
 
   const { data: items = [], isLoading } = useQuery({
@@ -43,11 +38,12 @@ function CatalogPage() {
     queryFn: () => apiListCatalogItems(),
   });
 
-  const filtered = filter === "ALL" ? items : items.filter((i) => i.type === filter);
+  const events = items.filter((i) => i.type === "COURSE" || i.type === "SEMINAR");
+  const filtered = filter === "ALL" ? events : events.filter((i) => i.type === filter);
 
   return (
     <PageContainer>
-      <PageHeader eyebrow="Área do médico" title="Catálogo" description="Produtos, cursos e seminários disponíveis." />
+      <PageHeader eyebrow="Área do médico" title="Cursos" description="Cursos e seminários da America Anatomy Institute." />
 
       <div className="flex gap-2">
         {filters.map((f) => (
@@ -69,11 +65,11 @@ function CatalogPage() {
       {isLoading ? (
         <p className="text-sm text-fg-muted">Carregando…</p>
       ) : filtered.length === 0 ? (
-        <p className="text-sm text-fg-muted">Nenhum item encontrado.</p>
+        <p className="text-sm text-fg-muted">Nenhum curso ou seminário disponível no momento.</p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => (
-            <Link key={item.id} to="/medico/catalogo/$id" params={{ id: item.id }}>
+            <Link key={item.id} to="/medico/cursos/$id" params={{ id: item.id }}>
               <Card className="group flex h-full flex-col transition-colors hover:border-line-strong">
                 <CardBody className="flex flex-1 flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
@@ -97,11 +93,6 @@ function CatalogPage() {
                     {item.location && (
                       <p className="flex items-center gap-1.5">
                         <MapPin size={12} /> {item.isOnline ? "Online" : item.location}
-                      </p>
-                    )}
-                    {item.type === "PRODUCT" && item.stockQty !== null && (
-                      <p className="flex items-center gap-1.5">
-                        <Package size={12} /> {item.stockQty} em estoque
                       </p>
                     )}
                   </div>

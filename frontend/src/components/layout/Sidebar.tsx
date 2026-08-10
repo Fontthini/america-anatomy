@@ -10,6 +10,9 @@ import {
   Lock,
   Bell,
   UserCheck,
+  KanbanSquare,
+  Share2,
+  Wallet,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
@@ -27,7 +30,10 @@ type Item = {
 
 const items: Item[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/medicos-pendentes", label: "Médicos Pendentes", icon: UserCheck, roles: ["STAFF", "ADMIN"] },
+  { to: "/funil", label: "Funil", icon: KanbanSquare, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
+  { to: "/indicacoes", label: "Indicações", icon: Share2, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["MANAGER", "ADMIN"] },
+  { to: "/medicos-pendentes", label: "Médicos Pendentes", icon: UserCheck, roles: ["MANAGER", "ADMIN"] },
   { to: "/dashboard", label: "Analytics", icon: BarChart3, disabled: true },
   { to: "/dashboard", label: "Projetos", icon: Layers, disabled: true },
   { to: "/profile", label: "Perfil", icon: User },

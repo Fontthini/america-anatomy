@@ -21,12 +21,17 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMedicosPendentesRouteImport } from './routes/_app.medicos-pendentes'
+import { Route as AppIndicacoesRouteImport } from './routes/_app.indicacoes'
+import { Route as AppFunilRouteImport } from './routes/_app.funil'
+import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
 import { Route as MedicoMedicoPendenteRouteImport } from './routes/_medico.medico.pendente'
 import { Route as MedicoMedicoPedidosRouteImport } from './routes/_medico.medico.pedidos'
-import { Route as MedicoMedicoCatalogoIndexRouteImport } from './routes/_medico.medico.catalogo.index'
-import { Route as MedicoMedicoCatalogoIdRouteImport } from './routes/_medico.medico.catalogo.$id'
+import { Route as MedicoMedicoIndicarRouteImport } from './routes/_medico.medico.indicar'
+import { Route as MedicoMedicoLojaIndexRouteImport } from './routes/_medico.medico.loja.index'
+import { Route as MedicoMedicoCursosIndexRouteImport } from './routes/_medico.medico.cursos.index'
+import { Route as MedicoMedicoCursosIdRouteImport } from './routes/_medico.medico.cursos.$id'
 
 const VerificarEmailRoute = VerificarEmailRouteImport.update({
   id: '/verificar-email',
@@ -86,6 +91,21 @@ const AppMedicosPendentesRoute = AppMedicosPendentesRouteImport.update({
   path: '/medicos-pendentes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppIndicacoesRoute = AppIndicacoesRouteImport.update({
+  id: '/indicacoes',
+  path: '/indicacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFunilRoute = AppFunilRouteImport.update({
+  id: '/funil',
+  path: '/funil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -106,15 +126,24 @@ const MedicoMedicoPedidosRoute = MedicoMedicoPedidosRouteImport.update({
   path: '/medico/pedidos',
   getParentRoute: () => MedicoRoute,
 } as any)
-const MedicoMedicoCatalogoIndexRoute =
-  MedicoMedicoCatalogoIndexRouteImport.update({
-    id: '/medico/catalogo/',
-    path: '/medico/catalogo/',
-    getParentRoute: () => MedicoRoute,
-  } as any)
-const MedicoMedicoCatalogoIdRoute = MedicoMedicoCatalogoIdRouteImport.update({
-  id: '/medico/catalogo/$id',
-  path: '/medico/catalogo/$id',
+const MedicoMedicoIndicarRoute = MedicoMedicoIndicarRouteImport.update({
+  id: '/medico/indicar',
+  path: '/medico/indicar',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoLojaIndexRoute = MedicoMedicoLojaIndexRouteImport.update({
+  id: '/medico/loja/',
+  path: '/medico/loja/',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoCursosIndexRoute = MedicoMedicoCursosIndexRouteImport.update({
+  id: '/medico/cursos/',
+  path: '/medico/cursos/',
+  getParentRoute: () => MedicoRoute,
+} as any)
+const MedicoMedicoCursosIdRoute = MedicoMedicoCursosIdRouteImport.update({
+  id: '/medico/cursos/$id',
+  path: '/medico/cursos/$id',
   getParentRoute: () => MedicoRoute,
 } as any)
 
@@ -127,14 +156,19 @@ export interface FileRoutesByFullPath {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/dashboard': typeof AppDashboardRoute
+  '/financeiro': typeof AppFinanceiroRoute
+  '/funil': typeof AppFunilRoute
+  '/indicacoes': typeof AppIndicacoesRoute
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
   '/medico/': typeof MedicoMedicoIndexRoute
-  '/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
-  '/medico/catalogo/': typeof MedicoMedicoCatalogoIndexRoute
+  '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
+  '/medico/loja/': typeof MedicoMedicoLojaIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -145,14 +179,19 @@ export interface FileRoutesByTo {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/dashboard': typeof AppDashboardRoute
+  '/financeiro': typeof AppFinanceiroRoute
+  '/funil': typeof AppFunilRoute
+  '/indicacoes': typeof AppIndicacoesRoute
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
   '/medico': typeof MedicoMedicoIndexRoute
-  '/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
-  '/medico/catalogo': typeof MedicoMedicoCatalogoIndexRoute
+  '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/medico/cursos': typeof MedicoMedicoCursosIndexRoute
+  '/medico/loja': typeof MedicoMedicoLojaIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -166,14 +205,19 @@ export interface FileRoutesById {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/financeiro': typeof AppFinanceiroRoute
+  '/_app/funil': typeof AppFunilRoute
+  '/_app/indicacoes': typeof AppIndicacoesRoute
   '/_app/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/_medico/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/_medico/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/_medico/medico/pendente': typeof MedicoMedicoPendenteRoute
   '/_medico/medico/': typeof MedicoMedicoIndexRoute
-  '/_medico/medico/catalogo/$id': typeof MedicoMedicoCatalogoIdRoute
-  '/_medico/medico/catalogo/': typeof MedicoMedicoCatalogoIndexRoute
+  '/_medico/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/_medico/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
+  '/_medico/medico/loja/': typeof MedicoMedicoLojaIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -186,14 +230,19 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/dashboard'
+    | '/financeiro'
+    | '/funil'
+    | '/indicacoes'
     | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
     | '/medico/'
-    | '/medico/catalogo/$id'
-    | '/medico/catalogo/'
+    | '/medico/cursos/$id'
+    | '/medico/cursos/'
+    | '/medico/loja/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -204,14 +253,19 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/dashboard'
+    | '/financeiro'
+    | '/funil'
+    | '/indicacoes'
     | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
     | '/medico'
-    | '/medico/catalogo/$id'
-    | '/medico/catalogo'
+    | '/medico/cursos/$id'
+    | '/medico/cursos'
+    | '/medico/loja'
   id:
     | '__root__'
     | '/'
@@ -224,14 +278,19 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/_app/dashboard'
+    | '/_app/financeiro'
+    | '/_app/funil'
+    | '/_app/indicacoes'
     | '/_app/medicos-pendentes'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/_medico/medico/indicar'
     | '/_medico/medico/pedidos'
     | '/_medico/medico/pendente'
     | '/_medico/medico/'
-    | '/_medico/medico/catalogo/$id'
-    | '/_medico/medico/catalogo/'
+    | '/_medico/medico/cursos/$id'
+    | '/_medico/medico/cursos/'
+    | '/_medico/medico/loja/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -332,6 +391,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMedicosPendentesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/indicacoes': {
+      id: '/_app/indicacoes'
+      path: '/indicacoes'
+      fullPath: '/indicacoes'
+      preLoaderRoute: typeof AppIndicacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/funil': {
+      id: '/_app/funil'
+      path: '/funil'
+      fullPath: '/funil'
+      preLoaderRoute: typeof AppFunilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -360,18 +440,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicoMedicoPedidosRouteImport
       parentRoute: typeof MedicoRoute
     }
-    '/_medico/medico/catalogo/': {
-      id: '/_medico/medico/catalogo/'
-      path: '/medico/catalogo'
-      fullPath: '/medico/catalogo/'
-      preLoaderRoute: typeof MedicoMedicoCatalogoIndexRouteImport
+    '/_medico/medico/indicar': {
+      id: '/_medico/medico/indicar'
+      path: '/medico/indicar'
+      fullPath: '/medico/indicar'
+      preLoaderRoute: typeof MedicoMedicoIndicarRouteImport
       parentRoute: typeof MedicoRoute
     }
-    '/_medico/medico/catalogo/$id': {
-      id: '/_medico/medico/catalogo/$id'
-      path: '/medico/catalogo/$id'
-      fullPath: '/medico/catalogo/$id'
-      preLoaderRoute: typeof MedicoMedicoCatalogoIdRouteImport
+    '/_medico/medico/loja/': {
+      id: '/_medico/medico/loja/'
+      path: '/medico/loja'
+      fullPath: '/medico/loja/'
+      preLoaderRoute: typeof MedicoMedicoLojaIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/cursos/': {
+      id: '/_medico/medico/cursos/'
+      path: '/medico/cursos'
+      fullPath: '/medico/cursos/'
+      preLoaderRoute: typeof MedicoMedicoCursosIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/cursos/$id': {
+      id: '/_medico/medico/cursos/$id'
+      path: '/medico/cursos/$id'
+      fullPath: '/medico/cursos/$id'
+      preLoaderRoute: typeof MedicoMedicoCursosIdRouteImport
       parentRoute: typeof MedicoRoute
     }
   }
@@ -379,6 +473,9 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppFunilRoute: typeof AppFunilRoute
+  AppIndicacoesRoute: typeof AppIndicacoesRoute
   AppMedicosPendentesRoute: typeof AppMedicosPendentesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
@@ -386,6 +483,9 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
+  AppFunilRoute: AppFunilRoute,
+  AppIndicacoesRoute: AppIndicacoesRoute,
   AppMedicosPendentesRoute: AppMedicosPendentesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
@@ -394,19 +494,23 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface MedicoRouteChildren {
+  MedicoMedicoIndicarRoute: typeof MedicoMedicoIndicarRoute
   MedicoMedicoPedidosRoute: typeof MedicoMedicoPedidosRoute
   MedicoMedicoPendenteRoute: typeof MedicoMedicoPendenteRoute
   MedicoMedicoIndexRoute: typeof MedicoMedicoIndexRoute
-  MedicoMedicoCatalogoIdRoute: typeof MedicoMedicoCatalogoIdRoute
-  MedicoMedicoCatalogoIndexRoute: typeof MedicoMedicoCatalogoIndexRoute
+  MedicoMedicoCursosIdRoute: typeof MedicoMedicoCursosIdRoute
+  MedicoMedicoCursosIndexRoute: typeof MedicoMedicoCursosIndexRoute
+  MedicoMedicoLojaIndexRoute: typeof MedicoMedicoLojaIndexRoute
 }
 
 const MedicoRouteChildren: MedicoRouteChildren = {
+  MedicoMedicoIndicarRoute: MedicoMedicoIndicarRoute,
   MedicoMedicoPedidosRoute: MedicoMedicoPedidosRoute,
   MedicoMedicoPendenteRoute: MedicoMedicoPendenteRoute,
   MedicoMedicoIndexRoute: MedicoMedicoIndexRoute,
-  MedicoMedicoCatalogoIdRoute: MedicoMedicoCatalogoIdRoute,
-  MedicoMedicoCatalogoIndexRoute: MedicoMedicoCatalogoIndexRoute,
+  MedicoMedicoCursosIdRoute: MedicoMedicoCursosIdRoute,
+  MedicoMedicoCursosIndexRoute: MedicoMedicoCursosIndexRoute,
+  MedicoMedicoLojaIndexRoute: MedicoMedicoLojaIndexRoute,
 }
 
 const MedicoRouteWithChildren =

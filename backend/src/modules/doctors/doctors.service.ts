@@ -8,6 +8,8 @@ import {
   doctorRejectedTemplate,
 } from "../../lib/email/templates.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
+import { createAuditLog } from "../../lib/audit-log.js";
+import { pickNextSalesRep } from "../crm/crm.service.js";
 import { issueTokens, persistRefreshToken, toUserResponse } from "../auth/auth.service.js";
 import type { AuthResponse } from "../auth/auth.schemas.js";
 import type { DoctorRegisterInput, RejectDoctorInput, DoctorProfileResponse } from "./doctors.schemas.js";
@@ -65,13 +67,29 @@ export async function registerDoctor(input: DoctorRegisterInput): Promise<AuthRe
 
   void createNotification(user.id, NotificationType.DOCTOR_REGISTRATION_RECEIVED);
   void notifyStaffOfNewDoctor();
+  void assignRoundRobin(user.id);
 
   return { user: toUserResponse(user), token: accessToken, refreshToken };
 }
 
+/** Distribui o lead novo pro vendedor com menos leads no momento (best-effort, não bloqueia o cadastro). */
+async function assignRoundRobin(doctorUserId: string): Promise<void> {
+  try {
+    const salesRepId = await pickNextSalesRep();
+    if (!salesRepId) return;
+    await prisma.doctorProfile.update({
+      where: { userId: doctorUserId },
+      data: { assignedSalesRepId: salesRepId },
+    });
+    void createNotification(salesRepId, NotificationType.LEAD_ASSIGNED);
+  } catch (err) {
+    console.error("[doctors] Falha ao atribuir vendedor via round-robin:", err);
+  }
+}
+
 async function notifyStaffOfNewDoctor(): Promise<void> {
   const staff = await prisma.user.findMany({
-    where: { role: { in: ["STAFF", "ADMIN"] } },
+    where: { role: { in: ["MANAGER", "ADMIN"] } },
     select: { id: true },
   });
   for (const member of staff) {
@@ -113,7 +131,7 @@ async function findProfileByUserIdOrThrow(
 }
 
 export async function approveDoctor(
-  adminUserId: string,
+  actor: { id: string; name: string; role: string },
   doctorUserId: string,
 ): Promise<DoctorProfileResponse> {
   const profile = await findProfileByUserIdOrThrow(doctorUserId);
@@ -123,20 +141,23 @@ export async function approveDoctor(
     data: {
       approvalStatus: "APPROVED",
       approvedAt: new Date(),
-      approvedByUserId: adminUserId,
+      approvedByUserId: actor.id,
       rejectedAt: null,
       rejectionReason: null,
+      reviewRequestedAction: null,
     },
     include: { user: true },
   });
 
   void sendEmail({ to: updated.user.email, ...doctorApprovedTemplate({ name: updated.user.name }) });
   void createNotification(updated.userId, NotificationType.DOCTOR_APPROVED);
+  void createAuditLog(actor, "DOCTOR_APPROVED", updated.user.name);
 
   return toDoctorProfileResponse(updated);
 }
 
 export async function rejectDoctor(
+  actor: { id: string; name: string; role: string },
   doctorUserId: string,
   input: RejectDoctorInput,
 ): Promise<DoctorProfileResponse> {
@@ -148,6 +169,7 @@ export async function rejectDoctor(
       approvalStatus: "REJECTED",
       rejectedAt: new Date(),
       rejectionReason: input.reason ?? null,
+      reviewRequestedAction: null,
     },
     include: { user: true },
   });
@@ -157,6 +179,7 @@ export async function rejectDoctor(
     ...doctorRejectedTemplate({ name: updated.user.name, ...(input.reason ? { reason: input.reason } : {}) }),
   });
   void createNotification(updated.userId, NotificationType.DOCTOR_REJECTED);
+  void createAuditLog(actor, "DOCTOR_REJECTED", updated.user.name);
 
   return toDoctorProfileResponse(updated);
 }
