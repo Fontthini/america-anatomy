@@ -1,0 +1,78 @@
+---
+description: Auth, Theme, Density e Toast — interfaces e storage keys
+globs:
+  - src/contexts/**
+  - src/hooks/**
+alwaysApply: false
+---
+
+# Contextos Globais
+
+Providers montados em `src/routes/__root.tsx`, nesta ordem:
+
+`QueryClientProvider` → `ThemeProvider` → `DensityProvider` → `AuthProvider` → `ToastProvider`
+
+Hooks customizados futuros vão em `src/hooks/` (pasta ainda inexistente).
+
+## AuthContext
+
+Arquivo: `src/contexts/AuthContext.tsx`  
+Storage: `bp.token` (access token JWT no `localStorage`) — refresh token em cookie httpOnly.
+
+```typescript
+type AuthContextValue = {
+  user: MockUser | null;  // MockUser inclui emailVerified: boolean
+  status: "loading" | "authenticated" | "unauthenticated";
+  login: (email: string, password: string) => Promise<void>;
+  register: (payload: { name: string; email: string; password: string }) => Promise<void>;
+  logout: () => void;
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
+  updateProfile: (patch: Partial<MockUser>) => void;
+};
+```
+
+Consumir via `useAuth()`. Credenciais demo: `demo@demo.com` / `demo1234`.
+
+Auth usa **API real** via `src/lib/api/auth.ts`. `updateProfile` é otimista local (atualiza estado sem roundtrip ao backend).
+
+## ThemeContext
+
+Arquivo: `src/contexts/ThemeContext.tsx`  
+Storage: `bp.theme`  
+Valores: `"light" | "dark"`
+
+- Aplica `.dark` no `<html>` com transição `theme-anim`
+- Script inline em `__root.tsx` hidrata tema antes do paint
+- Consumir via `useTheme()` → `{ theme, setTheme, toggle }`
+
+## DensityContext
+
+Arquivo: `src/contexts/DensityContext.tsx`  
+Storage: `bp.density`  
+Valores: `"comfortable" | "compact"`
+
+- Aplica `data-density` no `<html>`; afeta `--row-h`, `--field-h`, `--card-pad`
+- Consumir via `useDensity()` → `{ density, setDensity, toggle }`
+
+## ToastContext
+
+Arquivo: `src/contexts/ToastContext.tsx`  
+Sem persistência — puramente UI.
+
+```typescript
+toast({
+  kind: "success" | "error" | "info",
+  title: string,
+  description?: string,
+  action?: { label: string; onClick: () => void },
+  duration?: number,  // padrão 4200ms
+});
+```
+
+Consumir via `useToast()`. Posição: bottom-right, z-100. **Backend não precisa.**
+
+## Command Palette (referência)
+
+Arquivo: `src/components/ui/CommandPalette.tsx`  
+Storage: `bp.cmd.recent` (5 itens). Atalho ⌘/Ctrl+K. Puramente client-side.

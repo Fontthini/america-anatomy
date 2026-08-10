@@ -1,0 +1,71 @@
+---
+description: Camada de e-mail transacional com Resend (templates, envio, tokens de verificação)
+globs: src/lib/email/**, src/lib/token.ts
+alwaysApply: false
+---
+
+# E-mails transacionais (Resend)
+
+## Camada de e-mail (`src/lib/email/`)
+
+| Arquivo | Responsabilidade |
+|---------|-----------------|
+| `client.ts` | Instância singleton do Resend (`new Resend(env.RESEND_API_KEY)`) |
+| `send.ts` | `sendEmail({to, subject, html, text?})` — wrapper best-effort (loga erros, não propaga) |
+| `templates.ts` | Templates HTML inline sem libs externas; textos centralizados |
+
+### Regras
+- **E-mail é best-effort**: erros de envio são logados mas nunca derrubam o fluxo principal.
+- Exceção: fluxos onde o usuário precisa do link para prosseguir (reset-password, confirm-email) — nesses casos o erro pode ser propagado se necessário, mas hoje segue best-effort.
+- Nunca hardcode a `RESEND_API_KEY` — sempre de `env.RESEND_API_KEY`.
+- `EMAIL_FROM` deve ter o formato `"Nome <email@dominio.com>"`.
+- Em desenvolvimento, use `onboarding@resend.dev` como remetente.
+
+### Adicionar um novo template
+1. Adicione uma função em `templates.ts` retornando `{ subject, html, text }`.
+2. Use `baseTemplate(content)` para o wrapper visual.
+3. Use `env.APP_NAME` e `env.APP_URL` via funções `appName()` e `appUrl()`.
+4. Importe e chame `sendEmail` no service correspondente.
+
+---
+
+## Tokens de verificação (`src/lib/token.ts`)
+
+| Função | Uso | Formato |
+|--------|-----|---------|
+| `generateOtpCode()` | Verificação de e-mail (`CONFIRM_EMAIL`) | 6 dígitos numéricos + hash SHA-256 |
+| `generateToken()` | Reset de senha (`RESET_PASSWORD`) | 64 hex chars + hash SHA-256 |
+| `hashToken(raw)` | Comparação segura | SHA-256 |
+
+- **Nunca** armazenar o valor raw no banco; sempre armazenar o hash.
+- `CONFIRM_EMAIL` usa código curto (OTP) — TTL 15 min, adequado para digitação manual.
+- `RESET_PASSWORD` usa token longo — TTL 1h, enviado como link no e-mail.
+
+## Modelo `VerificationToken` (Prisma)
+
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| `tokenHash` | String unique | SHA-256 do OTP ou do token |
+| `type` | `CONFIRM_EMAIL \| RESET_PASSWORD` | Tipo |
+| `expiresAt` | DateTime | CONFIRM_EMAIL = 15 min, RESET_PASSWORD = 1h |
+| `usedAt` | DateTime? | Preenchido ao usar (uso único) |
+
+### Validação (padrão para ambos os tipos)
+1. Buscar pelo hash
+2. Verificar `type`
+3. Verificar `usedAt === null`
+4. Verificar `expiresAt > now()`
+5. Marcar `usedAt = now()` na mesma transação
+
+## Política de e-mail verificado
+
+- Acesso ao app é **bloqueado** enquanto `emailVerified === false`
+- O front redireciona para `/verificar-email` se `user.emailVerified === false`
+- Login é permitido mesmo sem verificação — o bloqueio é no guard de rota do front
+- Códigos OTP: rate limit de 1 min entre reenvios (cooldown visual de 60s no front)
+
+## Política de reset de senha
+
+- Cooldown de 24h entre solicitações de `forgot-password` — bloqueado silenciosamente (resposta genérica) apenas se existir um token `RESET_PASSWORD` **não utilizado** criado nos últimos 24h
+- Se o token já foi utilizado (`usedAt != null`), um novo link pode ser solicitado imediatamente
+- Bloqueio silencioso: a resposta ao usuário é idêntica ao caso normal (não revela que está rate-limited)

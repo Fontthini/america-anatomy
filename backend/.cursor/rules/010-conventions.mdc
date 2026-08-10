@@ -1,0 +1,85 @@
+---
+description: Convenções de código, módulos, erros e regra permanente de atualização
+alwaysApply: true
+---
+
+# Convenções do Backend
+
+## Este repositório é uma base clonável
+
+Ao estender este backend para um projeto específico:
+- Nunca hardcode valores de negócio (URLs, nomes, IDs) — tudo via `.env`
+- Nunca reutilize `DATABASE_URL`, `JWT_*_SECRET` ou `COOKIE_SECRET` entre projetos
+- Manter o módulo `auth` desacoplado de lógica de domínio específica
+
+## TypeScript
+
+- `strict: true`, `noUncheckedIndexedAccess: true`, `exactOptionalPropertyTypes: true`
+- Proibido `any` — usar tipos explícitos ou `unknown`
+- Imports com extensão `.js` (ESM + NodeNext)
+- `type` imports quando não há valor em runtime
+
+## Estrutura de módulos
+
+Cada domínio em `src/modules/<nome>/`:
+- `<nome>.schemas.ts` — Zod schemas + tipos inferidos
+- `<nome>.service.ts` — lógica de negócio (acessa Prisma, libs)
+- `<nome>.controller.ts` — lida com req/reply, chama service
+- `<nome>.routes.ts` — registra rotas no Fastify, registrado em `app.ts`
+
+## Validação com Zod
+
+**Obrigatório em toda entrada** (body, params, query). Usar `.parse()` no controller. Erros Zod são capturados pelo error handler global e retornados com `code: "VALIDATION_ERROR"`.
+
+Nunca confiar em `req.body` sem validar primeiro.
+
+## Rotas
+
+- Prefixo obrigatório: `/api/`
+- Rotas de auth: `/api/auth/*`
+- Rotas protegidas usam `preHandler: [authenticate]`
+
+## Formato de erro padrão
+
+Toda resposta de erro segue este shape:
+
+```json
+{
+  "error": {
+    "code": "UPPERCASE_SNAKE",
+    "message": "Mensagem legível ao humano.",
+    "details": {}
+  }
+}
+```
+
+Códigos em uso: `VALIDATION_ERROR`, `BAD_REQUEST`, `EMAIL_ALREADY_EXISTS`,
+`INVALID_CREDENTIALS` (+ `details.passwordChangedAt` quando senha foi trocada via reset), `PASSWORD_ALREADY_USED`,
+`INVALID_CODE`, `CODE_ALREADY_USED`, `CODE_EXPIRED`,
+`INVALID_TOKEN`, `TOKEN_ALREADY_USED`, `TOKEN_EXPIRED`,
+`INVALID_FILE_TYPE`, `STORAGE_NOT_CONFIGURED`, `STORAGE_UPLOAD_FAILED`,
+`UNAUTHORIZED`, `NOT_FOUND`, `INTERNAL_ERROR`.
+
+Usar `AppError` de `src/middlewares/error-handler.ts`:
+
+```typescript
+throw new AppError(409, "EMAIL_ALREADY_EXISTS", "Este e-mail já está em uso.");
+```
+
+## Configuração via ambiente
+
+- Todas as variáveis em `.env` — nunca hardcoded no código
+- `.env.example` deve conter **todas** as variáveis com comentários descritivos
+- `src/config/env.ts` valida o `.env` com Zod — o app não sobe com config inválida
+- Para adicionar variável: 1) declarar no schema Zod em `env.ts`, 2) adicionar ao `.env.example`
+
+## Regra permanente — sincronização obrigatória
+
+**A cada nova funcionalidade ou mudança de endpoint:**
+
+1. Atualizar `docs/api-contract.md` com o novo endpoint (método, request, response, status, auth)
+2. Atualizar `.cursor/rules/030-api-contract.mdc` para refletir o mesmo contrato
+3. Atualizar `docs/api-contract.md` e as demais rules `.mdc` afetadas
+4. **NUNCA considerar uma tarefa concluída sem ter atualizado a documentação**
+
+Esta regra é inegociável e se aplica a qualquer agente ou desenvolvedor que trabalhe neste repositório.

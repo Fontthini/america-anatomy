@@ -1,0 +1,171 @@
+---
+description: Estado de integração backend — o que já usa API real e o que ainda é mock
+alwaysApply: true
+---
+
+# Integração Backend
+
+**Regra de ouro:** substituir mocks por API real mantendo os mesmos tipos TypeScript — nunca alterar UI nem contratos.
+
+---
+
+## Status de migração
+
+| Domínio | Estado | Camada |
+|---------|--------|--------|
+| **Auth (login, register, logout, /me)** | **API real** | `src/lib/api/auth.ts` |
+| **forgot-password / reset-password** | **API real** | `src/lib/api/auth.ts` |
+| **Confirmação de e-mail** | **API real** | `src/lib/api/auth.ts` |
+| **Perfil (name, bio)** | **API real** | `src/lib/api/users.ts` → `apiUpdateProfile` |
+| **Avatar upload** | **API real** | `src/lib/api/users.ts` → `apiUploadAvatar` (Bunny.net) |
+| **Preferências (emailNotifications, productUpdates)** | **API real** | `src/lib/api/users.ts` → `apiUpdatePreferences` |
+| **Notificações** | **API real** | `src/lib/api/notifications.ts` — useQuery no Topbar e na página `/notifications` |
+| KPIs / gráfico / tabela (dashboard) | Mock ainda | `src/lib/mock/{kpis,chart,table}.ts` |
+
+---
+
+## Camada de API (`src/lib/api/`)
+
+### `client.ts` — fetch base
+
+- `VITE_API_URL` (`.env`) define a URL do backend
+- `credentials: "include"` em toda requisição (cookie `bp.refresh`)
+- Token: `localStorage` chave `bp.token` (access token)
+- **Auto-refresh:** 401 → `POST /api/auth/refresh` uma vez → repete requisição; se falhar, despacha `auth:logout`
+- **ApiError:** `{ code, message, status, details }` — importar para tratar erros por código
+- `getToken()`, `setToken()`, `clearToken()` para gerenciar o access token
+
+### `auth.ts` — funções de auth
+
+| Função | Endpoint | Descrição |
+|--------|----------|-----------|
+| `apiLogin(email, password)` | `POST /api/auth/login` | Retorna `MockUser`, armazena token |
+| `apiRegister(payload)` | `POST /api/auth/register` | Retorna `MockUser`, armazena token |
+| `apiLogout()` | `POST /api/auth/logout` | Limpa token local e cookie |
+| `apiMe()` | `GET /api/auth/me` | Retorna `MockUser` atual |
+| `apiConfirmEmail(code)` | `POST /api/auth/confirm-email` | Confirma e-mail via código OTP de 6 dígitos |
+| `apiResendConfirmation(email)` | `POST /api/auth/resend-confirmation` | Reenvia código OTP (cooldown 1 min) |
+| `apiForgotPassword(email)` | `POST /api/auth/forgot-password` | Solicita redefinição de senha |
+| `apiResetPassword(token, password)` | `POST /api/auth/reset-password` | Redefine senha via link |
+
+### `users.ts` — funções de perfil
+
+| Função | Endpoint | Descrição |
+|--------|----------|-----------|
+| `apiUpdateProfile({ name, bio? })` | `PATCH /api/users/me` | Atualiza nome e bio; retorna `MockUser` atualizado |
+| `apiUploadAvatar(file)` | `POST /api/users/me/avatar` | Upload de avatar para Bunny.net via FormData; retorna `MockUser` com novo `avatarUrl` |
+| `apiUpdatePreferences({ emailNotifications?, productUpdates? })` | `PATCH /api/users/me/preferences` | Atualiza preferências de notificação; retorna `MockUser` atualizado |
+
+`apiUploadAvatar` usa `fetch` diretamente (sem `apiFetch`) para não sobrescrever o `Content-Type` com `application/json` e deixar o browser definir o boundary do multipart. Usa `getToken()` do `client.ts` para injetar o token.
+
+---
+
+## AuthContext (`src/contexts/AuthContext.tsx`)
+
+Interface pública **inalterada** — UI não precisa saber que houve migração:
+
+```typescript
+type AuthContextValue = {
+  user: MockUser | null;
+  status: "loading" | "authenticated" | "unauthenticated";
+  login(email, password): Promise<void>;
+  register(payload): Promise<void>;
+  logout(): void;
+  requestPasswordReset(email): Promise<void>;  // API real → apiForgotPassword
+  resetPassword(token, newPassword): Promise<void>;  // API real → apiResetPassword
+  updateProfile(patch): void;  // sincroniza AuthContext após chamadas de API de perfil
+};
+```
+
+**Hidratação de sessão:**
+1. Verifica `bp.token` em localStorage
+2. Chama `apiMe()` — o client faz refresh automático se necessário
+3. Sucesso → `status: "authenticated"` | Falha → `status: "unauthenticated"`
+
+**Evento `auth:logout`:** quando o refresh falha durante navegação, o client despacha este evento; o AuthContext ouve e reseta o estado.
+
+---
+
+## Guarda de rota (`src/routes/_app.tsx`)
+
+- `beforeLoad` (síncrono): checa `localStorage.getItem("bp.token")` — redireciona para `/login` se ausente
+- `AppLayout` (componente): monitora `status` → spinner durante `"loading"` → redireciona se `"unauthenticated"` após hidratação
+
+---
+
+## Rotas de e-mail
+
+| Rota | Arquivo | Descrição |
+|------|---------|-----------|
+| `/verificar-email` | `verificar-email.tsx` | 6 inputs OTP; bloqueio total sem verificação; cooldown 60s para resend |
+| `/redefinir-senha?token=...` | `redefinir-senha.tsx` | Formulário de nova senha via token de link |
+| `/forgot-password` | `forgot-password.tsx` | Solicita link de redefinição (resposta genérica) |
+
+## Notificações
+
+| Rota | Arquivo | Descrição |
+|------|---------|-----------|
+| `/notifications` | `_app.notifications.tsx` | Histórico completo com agrupamento por data e marcar como lida |
+
+- Topbar usa `useQuery(["notifications"], apiGetNotifications, { refetchInterval: 60_000 })` para atualizar o badge automaticamente
+- Clique em notificação não lida chama `apiMarkRead(id)` e invalida a query
+- Tipos disponíveis: `WELCOME`, `EMAIL_VERIFIED`, `PASSWORD_CHANGED`, `PASSWORD_RESET_REQUESTED`, `PROFILE_UPDATED`, `AVATAR_UPDATED`
+- Ao adicionar nova funcionalidade, seguir a rule `060-notifications.mdc` do backend para criar o tipo correspondente
+
+**Bloqueio por e-mail não verificado:** `_app.tsx` redireciona para `/verificar-email` quando `user.emailVerified === false` após hidratação. Acesso ao app completamente bloqueado até confirmar.
+
+---
+
+## Tratamento de erros por código
+
+| Código | Onde aparece | Tratamento |
+|--------|-------------|------------|
+| `INVALID_CREDENTIALS` | login.tsx | Erro inline no campo senha; se `details.passwordChangedAt` presente, mostra "Sua senha foi alterada em [data]. Use a senha mais recente." |
+| `EMAIL_ALREADY_EXISTS` | register.tsx | Erro inline no campo e-mail |
+| `INVALID_CODE` | verificar-email.tsx | Mensagem inline nos inputs |
+| `CODE_ALREADY_USED` | verificar-email.tsx | Mensagem inline nos inputs |
+| `CODE_EXPIRED` | verificar-email.tsx | Mensagem inline + prompt de resend |
+| `INVALID_TOKEN` | redefinir-senha.tsx | Estado de erro na tela |
+| `TOKEN_ALREADY_USED` | redefinir-senha.tsx | Estado de erro na tela |
+| `TOKEN_EXPIRED` | redefinir-senha.tsx | Estado de erro na tela |
+| `PASSWORD_ALREADY_USED` | redefinir-senha.tsx | Erro inline no campo "Nova senha" |
+| `FILE_TOO_LARGE` | _app.profile.tsx | Toast de erro no upload de avatar (> 2 MB) |
+| `INVALID_FILE_TYPE` | _app.profile.tsx | Toast de erro no upload de avatar |
+| `STORAGE_NOT_CONFIGURED` | _app.profile.tsx | Toast de erro no upload de avatar |
+| `STORAGE_UPLOAD_FAILED` | _app.profile.tsx | Toast de erro no upload de avatar |
+| `NOT_FOUND` | _app.notifications.tsx | Ignorado silenciosamente |
+| Outros | Qualquer formulário | Toast de erro |
+
+Usar `instanceof ApiError && err.code === "..."` para discriminar.
+
+---
+
+## Tipos (`src/lib/mock/users.ts`)
+
+```typescript
+type MockUser = {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  bio?: string;
+  role: string;
+  emailVerified: boolean;      // false até confirmar e-mail
+  emailNotifications: boolean; // preferência — padrão true
+  productUpdates: boolean;     // preferência — padrão false
+};
+```
+
+Mantido em `mock/users.ts` até os outros domínios serem migrados. Não mover enquanto ainda há mocks dependentes.
+
+---
+
+## Próximos passos (Fase 2+)
+
+Ver checklist completo em `docs/backend-handoff.md`. Próxima fase: dashboard (KPIs, gráfico, faturas).
+
+Ao migrar cada domínio:
+1. Implementar endpoint no backend
+2. Criar/atualizar `src/lib/api/<módulo>.ts`
+3. Substituir import de mock pela função de API no componente/rota
+4. Atualizar este arquivo e `010-conventions.mdc`

@@ -1,0 +1,86 @@
+---
+description: Visão geral do backend — base clonável, stack e mapa de pastas
+alwaysApply: true
+---
+
+# Backend Base — Visão Geral
+
+Este repositório é uma **base clonável**. Cada projeto novo parte de uma cópia desta pasta com seu próprio banco de dados e segredos. Não há lógica de negócio acoplada — apenas infraestrutura reutilizável.
+
+Comunicação com qualquer front-end exclusivamente via **HTTP/JSON**. CORS configurado via `CORS_ORIGIN` (env).
+
+## Stack
+
+| Camada | Tecnologia |
+|--------|-----------|
+| Runtime | Node.js |
+| Framework | Fastify v5 |
+| Linguagem | TypeScript strict (ESM) |
+| Banco | PostgreSQL via Prisma |
+| Auth | JWT access + refresh / argon2id |
+| Validação | Zod em toda entrada |
+| Módulo | ESM (`"type": "module"`) |
+
+## Porta padrão
+
+`PORT` (env) — padrão `3001`.
+
+## Mapa de pastas
+
+```
+backend/
+├── docs/
+│   └── api-contract.md     # fonte de verdade dos endpoints
+├── prisma/
+│   ├── schema.prisma        # User, RefreshToken, VerificationToken, PasswordHistory, Notification (+ enums)
+│   └── seed.ts              # dados demo
+├── scripts/
+│   └── setup.mjs            # bootstrap (npm run setup)
+├── src/
+│   ├── config/env.ts        # Zod — valida .env na inicialização
+│   ├── lib/
+│   │   ├── prisma.ts        # singleton PrismaClient
+│   │   ├── jwt.ts           # sign/verify access + refresh tokens
+│   │   ├── hash.ts          # argon2id hash/verify
+│   │   ├── token.ts         # generateToken (link) + generateOtpCode (6 dígitos)
+│   │   ├── storage.ts       # uploadFile + deleteFile (Bunny.net Edge Storage)
+│   │   ├── notifications.ts # createNotification — utilitário central de notificações
+│   │   └── email/
+│   │       ├── client.ts    # instância Resend
+│   │       ├── send.ts      # sendEmail best-effort
+│   │       └── templates.ts # confirmCodeTemplate, resetPasswordTemplate
+│   ├── modules/
+│   │   ├── auth/            # register, login, refresh, logout, me, confirm, forgot, reset
+│   │   ├── users/           # PATCH /api/users/me, POST /api/users/me/avatar, PATCH /api/users/me/preferences
+│   │   └── notifications/   # GET /api/notifications, PATCH /read-all, PATCH /:id/read
+│   ├── middlewares/
+│   │   ├── authenticate.ts  # Bearer guard → req.user
+│   │   └── error-handler.ts
+│   ├── plugins/
+│   │   ├── cors.ts          # CORS_ORIGIN (multi-origem)
+│   │   └── cookie.ts        # COOKIE_SECRET
+│   ├── app.ts               # buildApp()
+│   └── server.ts            # entry point
+└── .cursor/rules/
+```
+
+## Como iniciar um projeto novo
+
+```bash
+cp -r backend meu-projeto-api
+cd meu-projeto-api
+cp .env.example .env   # preencher TODAS as variáveis
+npm run setup          # install + prisma generate + migrate
+npm run dev
+```
+
+Ver `README.md` e `docs/api-contract.md` para detalhes completos.
+
+## Scripts principais
+
+| Comando | Ação |
+|---------|------|
+| `npm run setup` | Bootstrap (env → install → migrate) |
+| `npm run dev` | Servidor com watch |
+| `npm run prisma:migrate` | Migration dev |
+| `npm run seed` | Dados demo |

@@ -1,0 +1,129 @@
+---
+description: Schema Prisma, convenções de migration e seed
+globs:
+  - prisma/**
+alwaysApply: false
+---
+
+# Banco de Dados (Prisma + PostgreSQL)
+
+## Schema atual
+
+```prisma
+model User {
+  id                 String    @id @default(cuid())
+  name               String
+  email              String    @unique
+  passwordHash       String
+  avatarUrl          String?
+  bio                String?
+  role               String    @default("Owner")
+  emailVerified      Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  passwordChangedAt  DateTime? // preenchido ao trocar senha via reset
+  emailNotifications Boolean   @default(true)  // preferência de notificação por e-mail
+  productUpdates     Boolean   @default(false) // preferência de novidades do produto
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  refreshTokens      RefreshToken[]
+  verificationTokens VerificationToken[]
+  passwordHistory    PasswordHistory[]
+  notifications      Notification[]
+}
+
+model PasswordHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum TokenType {
+  CONFIRM_EMAIL
+  RESET_PASSWORD
+}
+
+enum NotificationType {
+  WELCOME
+  EMAIL_VERIFIED
+  PASSWORD_CHANGED
+  PASSWORD_RESET_REQUESTED
+  PROFILE_UPDATED
+  AVATAR_UPDATED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?        // null = não lida
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique   // SHA-256 do token raw
+  type      TokenType
+  expiresAt DateTime
+  usedAt    DateTime?           // preenchido ao usar (uso único)
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+## Convenções
+
+- IDs: `cuid()` (gerado pelo Prisma)
+- Timestamps: `createdAt` + `updatedAt` em todos os modelos principais
+- Campos opcionais do `UserResponse` são `String?` no Prisma → omitidos da resposta quando `null`
+- `onDelete: Cascade` em `RefreshToken` → tokens deletados junto com o usuário
+- Nunca fazer `SELECT *` — usar `select` ou `omit` explícito para excluir `passwordHash`
+
+## Migrações
+
+Sempre via CLI:
+```bash
+npm run prisma:migrate   # cria e aplica migration em dev
+npx prisma migrate deploy  # aplica em produção
+```
+
+Nunca editar arquivos dentro de `prisma/migrations/` manualmente.
+
+## Seed
+
+Arquivo: `prisma/seed.ts`
+
+Usuário demo criado (idempotente — pula se já existe):
+- `id`: `u_001`
+- `email`: `demo@demo.com`
+- `senha`: `demo1234` (hash argon2id)
+- `role`: `Owner`
+- `emailVerified`: `true` (não fica preso na tela de verificação)
+
+```bash
+npm run seed
+```
+
+## Cliente Prisma
+
+Singleton em `src/lib/prisma.ts`. Não instanciar `PrismaClient` diretamente em outros arquivos.
+
+## Variáveis de ambiente
+
+`DATABASE_URL` — validada por Zod em `src/config/env.ts` na inicialização.
+Formato esperado: `postgresql://user:pass@host:5432/dbname?sslmode=require`

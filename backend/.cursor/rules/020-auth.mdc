@@ -1,0 +1,83 @@
+---
+description: Estratégia de autenticação — JWT, cookies, hashing e rotação
+globs:
+  - src/modules/auth/**
+  - src/middlewares/authenticate.ts
+  - src/lib/jwt.ts
+  - src/lib/hash.ts
+alwaysApply: false
+---
+
+# Autenticação
+
+## Estratégia de tokens
+
+| Token | Duração | Onde fica | Como é usado |
+|-------|---------|-----------|--------------|
+| Access token | `~15min` | Body da resposta (`token`) | `Authorization: Bearer <token>` |
+| Refresh token | `7d` | Cookie httpOnly `bp.refresh` + tabela `RefreshToken` | POST `/api/auth/refresh` |
+
+**Nunca** retornar o refresh token no body da resposta.
+
+## Cookie httpOnly (`bp.refresh`)
+
+```typescript
+{
+  httpOnly: true,
+  secure: NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/api/auth",      // escopo restrito
+  maxAge: 7 * 24 * 60 * 60,
+}
+```
+
+## Rotação de refresh token
+
+A cada `/api/auth/refresh`:
+1. Verificar assinatura JWT do refresh token
+2. Buscar na tabela `RefreshToken` pelo token — rejeitar se não existir ou expirado
+3. Deletar o token usado (`prisma.refreshToken.delete`)
+4. Emitir novo access token + novo refresh token
+5. Persistir novo refresh token no banco
+6. Enviar novo cookie
+
+Resultado: um refresh token só pode ser usado **uma vez**.
+
+## Hashing de senha
+
+Algoritmo: **argon2id** via pacote `argon2`.
+
+```typescript
+argon2.hash(plain, { type: argon2.argon2id, memoryCost: 65536, timeCost: 3, parallelism: 4 })
+```
+
+Nunca armazenar senha em texto plano. Usar `verifyPassword()` de `src/lib/hash.ts`.
+
+## Guard de rota
+
+`src/middlewares/authenticate.ts` — usado como `preHandler` nas rotas protegidas:
+- Lê `Authorization: Bearer <token>`
+- Verifica assinatura e expiração com `verifyAccessToken()`
+- Injeta `req.user = { id, email }` para uso no controller
+
+## Rotas implementadas
+
+| Método | Rota | Guard | Status OK |
+|--------|------|-------|-----------|
+| POST | `/api/auth/register` | — | 201 |
+| POST | `/api/auth/login` | — | 200 |
+| POST | `/api/auth/refresh` | cookie | 200 |
+| POST | `/api/auth/logout` | cookie (opcional) | 204 |
+| GET | `/api/auth/me` | Bearer | 200 |
+| POST | `/api/auth/confirm-email` | — | 200 |
+| POST | `/api/auth/resend-confirmation` | — | 200 |
+| POST | `/api/auth/forgot-password` | — | 200 |
+| POST | `/api/auth/reset-password` | — | 200 |
+
+## Arquivos relevantes
+
+- `src/lib/jwt.ts` — `signAccessToken`, `signRefreshToken`, `verifyAccessToken`, `verifyRefreshToken`
+- `src/lib/hash.ts` — `hashPassword`, `verifyPassword`
+- `src/modules/auth/auth.service.ts` — lógica de negócio
+- `src/modules/auth/auth.controller.ts` — req/reply + cookies
+- `src/modules/auth/auth.routes.ts` — registro de rotas

@@ -1,0 +1,58 @@
+---
+description: Convenções inegociáveis de código, imports e roteamento
+alwaysApply: true
+---
+
+# Convenções do Projeto
+
+## Proibido
+
+- **shadcn/ui** e libs de componentes prontas — tudo é construído do zero em `src/components/ui` (mesmo que exista `components.json` residual do scaffold)
+- `react-router-dom` — usar `@tanstack/react-router`
+- `@tanstack/start` — usar `@tanstack/react-start`
+- `src/pages/` — TanStack Start usa `src/routes/`
+- `createServerFn` em `src/server/` (bloqueado por import protection)
+- Cores hardcoded em componentes — sempre tokens CSS (ver `020-design-system.mdc`)
+- `any` — TypeScript strict habilitado
+
+## Obrigatório
+
+- Componentes próprios em `src/components/ui/` e layout em `src/components/layout/`
+- Tokens via CSS variables em `src/styles.css` (`bg-bg`, `text-fg`, `border-line`, `text-accent`, etc.)
+- `cn()` de `src/lib/cn.ts` para classes condicionais
+- Ícones via `lucide-react`
+- Comunicação com o backend via funções em `src/lib/api/` usando `apiFetch` de `client.ts` — nunca `fetch` direto nos componentes
+
+## Nomenclatura e estrutura
+
+- **Componentes:** PascalCase, exports nomeados
+- **Hooks:** prefixo `use` (`useAuth`, `useTheme`, `useToast`, `useDensity`)
+- **Mocks:** sempre com `mockDelay()` para simular latência
+- **Loading:** Skeleton para conteúdo; Spinner para ações
+- **Formulários:** validação no submit (não no change); erros por campo
+- **Acessibilidade:** `aria-label`, `focus-visible`, `role="status"`, navegação por teclado
+
+## Roteamento e autenticação
+
+Layout pathless `_app` protege `/dashboard`, `/profile` e `/notifications`.
+
+Guard em `src/routes/_app.tsx`:
+- `beforeLoad` (síncrono): checa `localStorage.getItem("bp.token")` — redireciona para `/login` se ausente
+- `AppLayout` (assíncrono): após hidratação via `AuthContext`, redireciona para `/verificar-email` se `user.emailVerified === false`, ou para `/login` se `status === "unauthenticated"`
+
+Acesso ao app é **bloqueado** enquanto o e-mail não for confirmado via código OTP (`/verificar-email`).
+
+Guard de autenticados em rotas públicas (`/login`, `/register`):
+- `beforeLoad` (síncrono, client-side): checa `localStorage.getItem("bp.token")` — redireciona para `/dashboard` se presente (funciona na navegação interna)
+- `useEffect` no componente: redireciona após hidratação SSR — necessário porque `beforeLoad` não re-executa durante hidratação do servidor
+
+Cada rota leaf define `head()` com `title` e meta quando relevante.
+
+## Server state (pós-migração)
+
+Preferir `useServerFn` + `useQuery` a `useEffect` + `fetch` manual.
+
+- **Local:** `useState` para formulários e UI efêmera
+- **Global:** Contexts (auth, theme, density, toast)
+- **Server state:** TanStack Query
+- **Persistência:** `localStorage` para sessão, tema, densidade, recents do command palette

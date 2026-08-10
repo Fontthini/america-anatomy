@@ -1,0 +1,90 @@
+---
+description: Visão geral do produto Base UI Kit e mapa de pastas
+alwaysApply: true
+---
+
+# Base UI Kit — Visão Geral
+
+Boilerplate SaaS front-end com autenticação completa (JWT + OTP), dashboard (KPIs, gráfico, tabela), perfil com avatar, notificações, preferências, tema light/dark e command palette. Auth, perfil, avatar, preferências e notificações conectados a uma API REST real; dados de KPIs/gráfico/tabela ainda são mockados em `src/lib/mock/`.
+
+## Stack
+
+| Camada | Tecnologia |
+|--------|-----------|
+| Framework | TanStack Start v1 |
+| Router | TanStack React Router (file-based) |
+| UI | React 19 |
+| CSS | Tailwind CSS v4 (`src/styles.css` — sem `tailwind.config.js`) |
+| Server state | TanStack Query (usar na migração para APIs) |
+| Validação | Zod |
+| Gráficos | Recharts |
+| Ícones | Lucide React |
+| Build | Vite 7 |
+| Build (Lovable/CF) | `vite.config.ts` → Cloudflare Worker via `@lovable.dev/vite-tanstack-config` |
+| Build (EasyPanel) | `vite.config.node.ts` → Node.js server via Nitro `node-server` preset |
+
+**Scripts de build:**
+- `npm run build` → Cloudflare Pages (Lovable.dev), usa `vite.config.ts`
+- `npm run build:node` → Node.js/EasyPanel, usa `vite.config.node.ts`, gera `.output/server/index.mjs`
+- Deploy EasyPanel controlado por `nixpacks.toml` na raiz do projeto
+
+## Páginas e rotas
+
+| Página | Rota | Estado |
+|--------|------|--------|
+| Home | `/` | Redirect para login ou dashboard |
+| Login | `/login` | API real |
+| Registro | `/register` | API real |
+| Verificar e-mail | `/verificar-email` | API real (OTP 6 dígitos) |
+| Recuperar senha | `/forgot-password` | API real |
+| Redefinir senha | `/redefinir-senha?token=...` | API real |
+| Dashboard | `/dashboard` | Mockado (layout `_app`) |
+| Perfil | `/profile` | API real (dados pessoais, avatar, preferências) |
+| Notificações | `/notifications` | API real (layout `_app`) |
+
+Rotas em `src/routes/` — **nunca** criar `src/pages/`.
+
+```
+src/routes/
+├── __root.tsx              # Providers globais
+├── index.tsx               # / (redirect)
+├── login.tsx               # /login
+├── register.tsx            # /register
+├── verificar-email.tsx     # /verificar-email (OTP)
+├── forgot-password.tsx     # /forgot-password
+├── redefinir-senha.tsx     # /redefinir-senha?token=...
+├── _app.tsx                # Layout autenticado (guard: token + emailVerified)
+├── _app.dashboard.tsx      # /dashboard
+├── _app.profile.tsx        # /profile
+└── _app.notifications.tsx  # /notifications
+```
+
+## Mapa de pastas
+
+```
+src/
+├── components/
+│   ├── layout/     # Sidebar, Topbar, AuthSplit, MobileDrawer, PageContainer (+ PageHeader)
+│   └── ui/         # Componentes próprios (Button, Input, Card, etc.)
+├── contexts/       # Auth, Theme, Density, Toast
+├── hooks/          # (destino para hooks customizados — ainda vazio)
+├── lib/
+│   ├── api/        # Clientes REST reais: auth.ts, users.ts, notifications.ts, client.ts
+│   ├── mock/       # Dados mockados — substituir na integração
+│   ├── cn.ts       # clsx + tailwind-merge
+│   ├── useThemeColors.ts
+│   └── utils.ts
+├── routes/         # File-based routing
+├── router.tsx
+├── start.ts
+├── server.ts
+└── styles.css      # Tokens, tema, animações
+```
+
+## Regras relacionadas
+
+- Convenções de código → `010-conventions.mdc`
+- Design system e tokens → `020-design-system.mdc`
+- Contexts e hooks → `030-state-and-contexts.mdc`
+- Mocks e contrato backend → `040-mocks-and-backend-integration.mdc`
+- Documentação canônica → `docs/backend-handoff.md`

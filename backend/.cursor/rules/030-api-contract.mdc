@@ -1,0 +1,97 @@
+---
+description: Contrato da API — endpoints implementados, request/response e status
+alwaysApply: true
+---
+
+# Contrato da API
+
+**Fonte de verdade compartilhada entre front e back.**
+
+O arquivo completo e formatado vive em `docs/api-contract.md`.  
+Esta rule é um resumo rápido para o agente — manter ambos sincronizados.
+
+> Regra permanente: atualizar este arquivo E `docs/api-contract.md` a cada mudança de endpoint, antes de considerar a tarefa concluída.
+
+---
+
+## Tipo base: `UserResponse`
+
+```typescript
+{
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;         // omitir se null
+  bio?: string;               // omitir se null
+  role: string;               // padrão "Owner"
+  emailVerified: boolean;     // false até confirmar e-mail
+  emailNotifications: boolean; // preferência de notificação por e-mail
+  productUpdates: boolean;    // preferência de novidades do produto
+}
+```
+
+`passwordHash` **nunca** aparece em resposta alguma.
+
+---
+
+## Endpoints implementados
+
+### `GET /health`
+Auth: — | Response `200`: `{ status: "ok", timestamp: string }`
+
+---
+
+### Auth principal
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| POST | `/api/auth/register` | — | `201 { user, token }` + cookie |
+| POST | `/api/auth/login` | — | `200 { user, token }` + cookie |
+| POST | `/api/auth/refresh` | cookie | `200 { token }` + rotação |
+| POST | `/api/auth/logout` | cookie (opt) | `204` |
+| GET | `/api/auth/me` | Bearer | `200 UserResponse` |
+
+### E-mail transacional
+| Método | Rota | Auth | Response | Restrições |
+|--------|------|------|----------|------------|
+| POST | `/api/auth/confirm-email` | — | `200 { message }` | — |
+| POST | `/api/auth/resend-confirmation` | — | `200 { message }` (genérica) | cooldown 1 min |
+| POST | `/api/auth/forgot-password` | — | `200 { message }` (genérica) | cooldown 24h por conta |
+| POST | `/api/auth/reset-password` | — | `200 { message }` | não pode reutilizar últimas 5 senhas |
+
+### Perfil
+| Método | Rota | Auth | Response | Restrições |
+|--------|------|------|----------|------------|
+| PATCH | `/api/users/me` | Bearer | `200 UserResponse` | — |
+| POST | `/api/users/me/avatar` | Bearer | `200 UserResponse` | multipart, jpeg/png/webp, max 2 MB |
+| PATCH | `/api/users/me/preferences` | Bearer | `200 UserResponse` | body: `{ emailNotifications?: boolean, productUpdates?: boolean }` |
+
+### Notificações
+| Método | Rota | Auth | Response | Descrição |
+|--------|------|------|----------|-----------|
+| GET | `/api/notifications` | Bearer | `200 NotificationResponse[]` | Últimas 100, mais recentes primeiro |
+| PATCH | `/api/notifications/read-all` | Bearer | `204` | Marca todas como lidas |
+| PATCH | `/api/notifications/:id/read` | Bearer | `204` | Marca uma como lida |
+
+---
+
+## Formato de erro (todos os endpoints)
+
+```json
+{ "error": { "code": "UPPERCASE_SNAKE", "message": "...", "details": {} } }
+```
+
+Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.passwordChangedAt` quando senha foi trocada),
+`EMAIL_ALREADY_EXISTS`, `PASSWORD_ALREADY_USED`,
+`INVALID_CODE`, `CODE_ALREADY_USED`, `CODE_EXPIRED`,
+`INVALID_TOKEN`, `TOKEN_ALREADY_USED`, `TOKEN_EXPIRED`,
+`INVALID_FILE_TYPE`, `STORAGE_NOT_CONFIGURED`, `STORAGE_UPLOAD_FAILED`,
+`INTERNAL_ERROR`
+
+---
+
+## Endpoints futuros (não implementados)
+
+Auth: `change-password`  
+Dashboard: `/api/dashboard`, `/api/invoices` (CRUD + export)
+
+Ver `docs/api-contract.md` para detalhes completos.

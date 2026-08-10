@@ -1,0 +1,81 @@
+---
+description: Tokens, tipografia, motion e estética Premium Minimalista
+globs:
+  - src/components/**
+  - src/styles/**
+  - "**/*.css"
+alwaysApply: false
+---
+
+# Design System
+
+Fonte única de tokens: `src/styles.css` (Tailwind v4 com `@import "tailwindcss"`, `@theme inline`, `@utility`). Não existe `tailwind.config.js`.
+
+## Estética: Premium Minimalista
+
+- Identidade escura/clara com acento verde (`--accent`)
+- Superfícies discretas, bordas sutis (`--line`), sombras leves (`--shadow-pop`)
+- Tipografia Inter Variable, hierarquia clara
+
+### Proibido na UI
+
+- Gradiente roxo ou paletas "AI slop"
+- Glassmorphism exagerado
+- Sombras pesadas ou múltiplas camadas de blur
+- Emojis como elemento visual
+- Cores soltas (`#fff`, `rgb(...)`) em componentes — usar tokens
+
+## Cores semânticas
+
+| Token | Uso |
+|-------|-----|
+| `--bg`, `--bg-elev` | Fundo da página e elevado (sidebar) |
+| `--surface-1/2/3` | Superfícies, hover, seleção |
+| `--fg`, `--fg-muted` | Texto principal e secundário |
+| `--line`, `--line-strong` | Bordas e foco |
+| `--accent`, `--accent-soft`, `--accent-fg` | Primária / sucesso |
+| `--danger` | Erros / ações destrutivas |
+| `--popover`, `--shadow-pop` | Dropdowns, toasts |
+
+Dark mode: classe `.dark` no `<html>`. Light é padrão em `:root`.
+
+## Motion
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--dur-micro` | 120ms | Hover, press |
+| `--dur-std` | 180ms | Transições de cor |
+| `--dur-emph` | 240ms | Entrada de página |
+| `--ease-in` | cubic-bezier(0.2, 0, 0, 1) | Entradas |
+| `--ease-out` | cubic-bezier(0.4, 0, 1, 1) | Saídas |
+
+**Regras de animação:**
+- Animar apenas `transform` e `opacity` (ex.: `page-enter`, `press`)
+- Transição de tema via classe `theme-anim` (só cores)
+- Respeitar `prefers-reduced-motion` — animações suprimidas no CSS base
+
+Utilitários: `page-enter`, `stagger-children`, `shimmer` + `shimmer-anim`, `press`.
+
+## Densidade
+
+Atributo `data-density` no `<html>`:
+
+| Modo | `--row-h` | `--field-h` | `--card-pad` |
+|------|-----------|-------------|--------------|
+| comfortable (padrão) | 3.25rem | 2.5rem | 1.25rem |
+| compact | 2.5rem | 2.125rem | 0.875rem |
+
+## Tipografia
+
+| Utilitário | Uso |
+|-----------|-----|
+| `text-display` | Títulos de página |
+| `text-h1` / `text-h2` / `text-h3` | Seções e cards |
+| `text-body` | Texto corrido |
+| `text-caption` | Labels, metadados |
+| `font-display` | Títulos (weight 600, tracking -0.025em) |
+| `tnum` | Números tabulares (preços, IDs) |
+
+## Componentes UI
+
+Todos em `src/components/ui/` — ver lista completa em `docs/backend-handoff.md` seção 4. Composição via subcomponentes (`CardHeader`, `TabsList`, etc.). Layout em `src/components/layout/` (`PageHeader` exportado de `PageContainer.tsx`).

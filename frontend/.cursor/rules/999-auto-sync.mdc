@@ -1,0 +1,34 @@
+---
+description: Checklist obrigatório de sincronização ao final de cada tarefa
+alwaysApply: true
+---
+
+# Sincronização automática — executar ao final de TODA tarefa
+
+Antes de declarar uma tarefa concluída, verificar cada item afetado pela mudança:
+
+## Backend
+
+| O que mudou | O que atualizar |
+|-------------|-----------------|
+| Endpoint novo ou alterado | `docs/api-contract.md` + `030-api-contract.mdc` |
+| Novo código de erro (`AppError`) | `010-conventions.mdc` + `030-api-contract.mdc` |
+| Campo ou modelo no Prisma | `040-database.mdc` |
+| Nova variável de ambiente | `.env.example` + `src/config/env.ts` |
+| Template de e-mail ou token | `050-emails.mdc` |
+| Regra de segurança ou rate limit | rule relevante + `030-api-contract.mdc` |
+
+## Frontend
+
+| O que mudou | O que atualizar |
+|-------------|-----------------|
+| Rota criada ou deletada | `000-project-overview.mdc` (tabela + mapa de pastas) |
+| Mock → API real | `040-mocks-and-backend-integration.mdc` (tabela de migração) |
+| Novo código de erro tratado | tabela de erros em `040-mocks-and-backend-integration.mdc` |
+| Guard ou fluxo de auth alterado | `010-conventions.mdc` + `030-state-and-contexts.mdc` |
+
+## Regra de ouro
+
+Se qualquer arquivo em `src/modules/`, `prisma/`, `src/lib/`, `src/routes/`,
+`src/lib/api/` ou `src/contexts/` foi modificado — ao menos uma rule ou doc precisa
+ser atualizada. Não encerrar a tarefa sem verificar.

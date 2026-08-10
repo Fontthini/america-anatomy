@@ -1,0 +1,58 @@
+---
+description: Regra de notificações — obrigatório disparar notificação em toda ação relevante do usuário
+alwaysApply: true
+---
+
+# Notificações — Regra permanente
+
+## Princípio
+
+**Toda ação que modifica dados do usuário ou representa um evento relevante para a conta DEVE gerar uma notificação** via `createNotification(userId, type)` de `src/lib/notifications.ts`.
+
+A chamada deve ser **fire-and-forget** (`void createNotification(...)`) para nunca bloquear o fluxo principal.
+
+---
+
+## Tipos disponíveis (`NotificationType` do Prisma)
+
+| Tipo | Quando disparar |
+|------|----------------|
+| `WELCOME` | Ao criar conta (`registerUser`) |
+| `EMAIL_VERIFIED` | Ao confirmar e-mail (`confirmEmail`) |
+| `PASSWORD_RESET_REQUESTED` | Ao solicitar redefinição (`forgotPassword`) |
+| `PASSWORD_CHANGED` | Ao redefinir senha (`resetPassword`) |
+| `PROFILE_UPDATED` | Ao atualizar perfil (`updateProfile`) |
+| `AVATAR_UPDATED` | Ao trocar avatar (`uploadAvatar`) |
+
+---
+
+## Ao criar uma nova funcionalidade
+
+Quando implementar uma nova ação que cria, edita ou deleta dados do usuário:
+
+1. Verificar se existe um `NotificationType` adequado na lista acima.
+2. **Se não existir:** adicionar o novo tipo ao enum `NotificationType` em `prisma/schema.prisma`, rodar `prisma migrate dev`, adicionar a entrada em `NOTIFICATION_CONTENT` em `src/lib/notifications.ts`, e atualizar este arquivo e `030-api-contract.mdc`.
+3. **Se existir:** chamar `void createNotification(userId, NotificationType.NOME)` no serviço, após o sucesso da operação principal.
+
+---
+
+## Implementação de referência
+
+```typescript
+// Em qualquer service após operação bem-sucedida:
+import { createNotification, NotificationType } from "../../lib/notifications.js";
+
+// fire-and-forget — nunca await, nunca bloqueia
+void createNotification(userId, NotificationType.PROFILE_UPDATED);
+```
+
+---
+
+## Checklist ao adicionar nova funcionalidade
+
+- [ ] A ação é relevante para o histórico do usuário?
+- [ ] Existe `NotificationType` adequado?
+- [ ] Se não: adicionei ao enum, migrei e atualizei `NOTIFICATION_CONTENT`?
+- [ ] Chamei `void createNotification(userId, type)` no service?
+- [ ] Atualizei `docs/api-contract.md` com o novo tipo na tabela?
+- [ ] Atualizei `030-api-contract.mdc`?

@@ -1,0 +1,40 @@
+import Fastify from "fastify";
+import multipart from "@fastify/multipart";
+import { registerCors } from "./plugins/cors.js";
+import { registerCookie } from "./plugins/cookie.js";
+import { registerErrorHandler } from "./middlewares/error-handler.js";
+import { authRoutes } from "./modules/auth/auth.routes.js";
+import { usersRoutes } from "./modules/users/users.routes.js";
+import { notificationsRoutes } from "./modules/notifications/notifications.routes.js";
+
+export async function buildApp() {
+  const isDev = process.env["NODE_ENV"] !== "production";
+  const app = Fastify({
+    logger: isDev
+      ? { transport: { target: "pino-pretty", options: { colorize: true, translateTime: "HH:MM:ss" } } }
+      : true,
+  });
+
+  // Plugins
+  await registerCors(app);
+  await registerCookie(app);
+  await app.register(multipart, {
+    limits: {
+      fileSize: 2 * 1024 * 1024, // 2 MB
+      files: 1,
+    },
+  });
+
+  // Error handler global
+  registerErrorHandler(app);
+
+  // Health check
+  app.get("/health", async () => ({ status: "ok", timestamp: new Date().toISOString() }));
+
+  // Módulos
+  await app.register(authRoutes);
+  await app.register(usersRoutes);
+  await app.register(notificationsRoutes);
+
+  return app;
+}
