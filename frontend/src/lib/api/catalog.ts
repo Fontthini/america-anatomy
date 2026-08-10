@@ -92,3 +92,85 @@ export async function apiUpdateCatalogItem(
 export async function apiArchiveCatalogItem(id: string): Promise<CatalogItemResponse> {
   return apiFetch<CatalogItemResponse>(`/api/catalog/${id}/archive`, { method: "PATCH" });
 }
+
+// ---------------------------------------------------------------------------
+// Página pública do curso + inscrição de interesse (médico parceiro sem conta)
+// ---------------------------------------------------------------------------
+
+export type PublicCatalogItemResponse = {
+  id: string;
+  type: CatalogItemType;
+  title: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  price: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  location: string | null;
+  isOnline: boolean;
+  vagasRestantes: number | null;
+};
+
+export type CourseRegistrationStatus = "NEW" | "CONTACTED" | "CONFIRMED" | "DECLINED";
+
+export type CourseRegistrationResponse = {
+  id: string;
+  catalogItemId: string;
+  name: string;
+  email: string;
+  crm: string | null;
+  whatsapp: string;
+  notes: string | null;
+  status: CourseRegistrationStatus;
+  createdAt: string;
+};
+
+export type EnrolledDoctorResponse = {
+  orderId: string;
+  doctorProfileId: string;
+  name: string;
+  email: string;
+  crm: string | null;
+  phone: string | null;
+  createdAt: string;
+};
+
+/** GET /api/catalog/public/:slug — sem login */
+export async function apiGetPublicCourse(slug: string): Promise<PublicCatalogItemResponse> {
+  return apiFetch<PublicCatalogItemResponse>(`/api/catalog/public/${slug}`, { skipAuth: true });
+}
+
+/** POST /api/catalog/:id/register-interest — sem login */
+export async function apiRegisterInterest(
+  catalogItemId: string,
+  payload: { name: string; email: string; crm?: string; whatsapp: string; notes?: string },
+): Promise<CourseRegistrationResponse> {
+  return apiFetch<CourseRegistrationResponse>(`/api/catalog/${catalogItemId}/register-interest`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    skipAuth: true,
+  });
+}
+
+/** GET /api/catalog/:id/registrations — staff */
+export async function apiListCourseRegistrations(catalogItemId: string): Promise<CourseRegistrationResponse[]> {
+  return apiFetch<CourseRegistrationResponse[]>(`/api/catalog/${catalogItemId}/registrations`);
+}
+
+/** PATCH /api/catalog/:id/registrations/:regId — staff */
+export async function apiUpdateRegistrationStatus(
+  catalogItemId: string,
+  registrationId: string,
+  status: CourseRegistrationStatus,
+): Promise<CourseRegistrationResponse> {
+  return apiFetch<CourseRegistrationResponse>(`/api/catalog/${catalogItemId}/registrations/${registrationId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
+/** GET /api/catalog/:id/orders — staff, quem já tem conta e se inscreveu de verdade */
+export async function apiListEnrolledDoctors(catalogItemId: string): Promise<EnrolledDoctorResponse[]> {
+  return apiFetch<EnrolledDoctorResponse[]>(`/api/catalog/${catalogItemId}/orders`);
+}

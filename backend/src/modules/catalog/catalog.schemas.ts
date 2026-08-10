@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CatalogItemType, CatalogItemStatus } from "@prisma/client";
+import type { CatalogItemType, CatalogItemStatus, CourseRegistrationStatus } from "@prisma/client";
 
 const baseFields = {
   title: z.string().min(2, "Título deve ter ao menos 2 caracteres.").max(150),
@@ -71,5 +71,63 @@ export type CatalogItemResponse = {
   vagasRestantes: number | null;
   sku: string | null;
   stockQty: number | null;
+  createdAt: string;
+};
+
+// ---------------------------------------------------------------------------
+// Inscrição pública em curso/seminário (médico parceiro sem conta)
+// ---------------------------------------------------------------------------
+
+export const registerInterestSchema = z.object({
+  name: z.string().min(2, "Nome deve ter ao menos 2 caracteres.").max(150),
+  email: z.string().email("E-mail inválido."),
+  crm: z.string().max(30).optional(),
+  whatsapp: z.string().min(8, "WhatsApp inválido.").max(30),
+  notes: z.string().max(500).optional(),
+});
+
+export const updateRegistrationStatusSchema = z.object({
+  status: z.enum(["NEW", "CONTACTED", "CONFIRMED", "DECLINED"]),
+});
+
+export type RegisterInterestInput = z.infer<typeof registerInterestSchema>;
+export type UpdateRegistrationStatusInput = z.infer<typeof updateRegistrationStatusSchema>;
+
+export type CourseRegistrationResponse = {
+  id: string;
+  catalogItemId: string;
+  name: string;
+  email: string;
+  crm: string | null;
+  whatsapp: string;
+  notes: string | null;
+  status: CourseRegistrationStatus;
+  createdAt: string;
+};
+
+/** Subconjunto seguro pra página pública — não exige auth, não expõe estoque/vagas de outros itens. */
+export type PublicCatalogItemResponse = {
+  id: string;
+  type: CatalogItemType;
+  title: string;
+  slug: string;
+  description: string | null;
+  imageUrl: string | null;
+  price: string | null;
+  startsAt: string | null;
+  endsAt: string | null;
+  location: string | null;
+  isOnline: boolean;
+  vagasRestantes: number | null;
+};
+
+/** Item do roster de um curso/seminário — quem já tem conta e se inscreveu de verdade (Order). */
+export type EnrolledDoctorResponse = {
+  orderId: string;
+  doctorProfileId: string;
+  name: string;
+  email: string;
+  crm: string | null;
+  phone: string | null;
   createdAt: string;
 };

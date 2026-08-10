@@ -80,6 +80,7 @@ Todos os erros seguem este shape:
 | `REFERRAL_NOT_FOUND` | 404 | Indicação inexistente |
 | `COMMISSION_ALREADY_PAID` | 409 | Comissão desta indicação já foi lançada (lançamento é único) |
 | `FINANCIAL_ENTRY_NOT_FOUND` | 404 | Lançamento financeiro inexistente |
+| `COURSE_REGISTRATION_NOT_FOUND` | 404 | Inscrição de interesse (formulário público) inexistente |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -818,6 +819,80 @@ Lança a comissão — **uma única vez** (409 se já paga). Cria automaticament
 
 ---
 
+## Inscrição pública em curso/seminário (`/api/catalog/`)
+
+Pra médicos parceiros que ainda **não têm conta** na plataforma — formulário público sem login, gera um `CourseRegistration` (lead vinculado ao curso), não cria `User`/`DoctorProfile`. Diferente do fluxo de `Order` (que exige conta aprovada) — as duas listas juntas (`CourseRegistration` + `Order`) dão o roster completo de quem está interessado/inscrito num curso.
+
+**`CourseRegistrationStatus`:** `NEW | CONTACTED | CONFIRMED | DECLINED`
+
+### `GET /api/catalog/public/:slug`
+
+Dados públicos do curso/seminário pra montar a página de divulgação. Só retorna itens `PUBLISHED` do tipo `COURSE`/`SEMINAR`.
+
+**Auth:** nenhuma
+
+**Response `200`:**
+```typescript
+{
+  id: string; type: "COURSE" | "SEMINAR"; title: string; slug: string;
+  description: string | null; imageUrl: string | null; price: string | null;
+  startsAt: string | null; endsAt: string | null; location: string | null;
+  isOnline: boolean; vagasRestantes: number | null;
+}
+```
+
+**Erros:** `404 CATALOG_ITEM_NOT_FOUND`
+
+---
+
+### `POST /api/catalog/:id/register-interest`
+
+Registra o interesse (não cria conta). `:id` é o `CatalogItem.id` do curso/seminário.
+
+**Auth:** nenhuma
+
+**Request body:**
+```json
+{ "name": "string", "email": "string", "crm": "string", "whatsapp": "string", "notes": "string" }
+```
+
+**Response `201`:** `CourseRegistrationResponse` — `{ id, catalogItemId, name, email, crm, whatsapp, notes, status, createdAt }`
+
+**Erros:** `400 VALIDATION_ERROR`, `404 CATALOG_ITEM_NOT_FOUND` (item não existe, não publicado, ou não é curso/seminário)
+
+---
+
+### `GET /api/catalog/:id/registrations`
+
+Lista os interessados via formulário público de um curso — staff.
+
+**Auth:** role `MANAGER`/`ADMIN` — **Response `200`:** array de `CourseRegistrationResponse`
+
+---
+
+### `PATCH /api/catalog/:id/registrations/:regId`
+
+Atualiza o status de acompanhamento de um interessado (ex.: depois de contatar por WhatsApp).
+
+**Auth:** role `MANAGER`/`ADMIN`
+
+**Request body:** `{ "status": "CONTACTED" }`
+
+---
+
+### `GET /api/catalog/:id/orders`
+
+Roster de médicos que **já têm conta** e se inscreveram de verdade (via `Order` confirmado) naquele curso — staff.
+
+**Auth:** role `MANAGER`/`ADMIN`
+
+**Response `200`:**
+```typescript
+{ orderId: string; doctorProfileId: string; name: string; email: string; crm: string | null; phone: string | null; createdAt: string; }[]
+```
+
+---
+
 ## Financeiro (`/api/finance/`)
 
 Ledger simples (sem contas/categorias fixas em enum — categoria é texto livre, com uma lista sugerida gerenciável). Restrito a `MANAGER`/`ADMIN` — vendedor não vê financeiro (mesma regra do peptideo).
@@ -863,6 +938,7 @@ Lista/cria categorias sugeridas (não são um enum fixo — `FinancialEntry.cate
 | `ORDER_CREATED` | Ao criar pedido (`POST /api/orders`) |
 | `LEAD_ASSIGNED` | Ao médico se cadastrar, pro vendedor escolhido no round-robin |
 | `LEAD_REVIEW_REQUESTED` | Ao vendedor solicitar revisão (`PATCH /api/crm/leads/:id/request-review`), fan-out pra `MANAGER`/`ADMIN` |
+| `NEW_COURSE_REGISTRATION` | Ao registrar interesse via formulário público (`POST /api/catalog/:id/register-interest`), fan-out pra `MANAGER`/`ADMIN` |
 
 ---
 

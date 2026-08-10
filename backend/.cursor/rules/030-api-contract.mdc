@@ -115,6 +115,16 @@ Comissão é lançamento manual único (409 se repetir) que cria automaticamente
 | PATCH | `/api/referrals/:id/status` | idem | `200 ReferralResponse` | status validado por `type` |
 | PUT | `/api/referrals/:id/commission` | Bearer + `requireRole(MANAGER,ADMIN)` | `200 ReferralResponse` | 409 se já paga |
 
+### Inscrição pública em curso (`/api/catalog`) — sem login
+Médico parceiro sem conta demonstra interesse num curso via formulário público, sem criar `User`.
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| GET | `/api/catalog/public/:slug` | — | `200 PublicCatalogItemResponse` (só PUBLISHED COURSE/SEMINAR) |
+| POST | `/api/catalog/:id/register-interest` | — | `201 CourseRegistrationResponse` |
+| GET | `/api/catalog/:id/registrations` | Bearer + `requireRole(MANAGER,ADMIN)` | `200 CourseRegistrationResponse[]` |
+| PATCH | `/api/catalog/:id/registrations/:regId` | idem | `200 CourseRegistrationResponse` — body `{status}` |
+| GET | `/api/catalog/:id/orders` | idem | `200 EnrolledDoctorResponse[]` — quem já tem conta e se inscreveu de verdade |
+
 ### Financeiro (`/api/finance`) — MANAGER/ADMIN apenas
 Categoria é texto livre. Gatilhos automáticos: pedido criado → entrada (`PEDIDO PAGO`); comissão lançada → saída (`Comissão`).
 | Método | Rota | Response |

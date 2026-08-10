@@ -58,6 +58,10 @@ const NOTIFICATION_CONTENT: Record<NotificationType, NotificationContent> = {
     title: "Aprovação solicitada",
     body: "Um vendedor solicitou sua decisão sobre um cadastro de médico.",
   },
+  NEW_COURSE_REGISTRATION: {
+    title: "Novo interessado em curso",
+    body: "Um médico parceiro se cadastrou pelo formulário público de um curso/seminário.",
+  },
 };
 
 /**

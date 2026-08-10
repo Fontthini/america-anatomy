@@ -18,6 +18,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as MedicoRouteImport } from './routes/_medico'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CursosSlugRouteImport } from './routes/cursos.$slug'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMedicosPendentesRouteImport } from './routes/_app.medicos-pendentes'
@@ -26,9 +27,11 @@ import { Route as AppFunilRouteImport } from './routes/_app.funil'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
+import { Route as AppGestaoCursosIndexRouteImport } from './routes/_app.gestao-cursos.index'
 import { Route as MedicoMedicoPendenteRouteImport } from './routes/_medico.medico.pendente'
 import { Route as MedicoMedicoPedidosRouteImport } from './routes/_medico.medico.pedidos'
 import { Route as MedicoMedicoIndicarRouteImport } from './routes/_medico.medico.indicar'
+import { Route as AppGestaoCursosIdRouteImport } from './routes/_app.gestao-cursos.$id'
 import { Route as MedicoMedicoLojaIndexRouteImport } from './routes/_medico.medico.loja.index'
 import { Route as MedicoMedicoCursosIndexRouteImport } from './routes/_medico.medico.cursos.index'
 import { Route as MedicoMedicoCursosIdRouteImport } from './routes/_medico.medico.cursos.$id'
@@ -76,6 +79,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CursosSlugRoute = CursosSlugRouteImport.update({
+  id: '/cursos/$slug',
+  path: '/cursos/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -116,6 +124,11 @@ const MedicoMedicoIndexRoute = MedicoMedicoIndexRouteImport.update({
   path: '/medico/',
   getParentRoute: () => MedicoRoute,
 } as any)
+const AppGestaoCursosIndexRoute = AppGestaoCursosIndexRouteImport.update({
+  id: '/gestao-cursos/',
+  path: '/gestao-cursos/',
+  getParentRoute: () => AppRoute,
+} as any)
 const MedicoMedicoPendenteRoute = MedicoMedicoPendenteRouteImport.update({
   id: '/medico/pendente',
   path: '/medico/pendente',
@@ -130,6 +143,11 @@ const MedicoMedicoIndicarRoute = MedicoMedicoIndicarRouteImport.update({
   id: '/medico/indicar',
   path: '/medico/indicar',
   getParentRoute: () => MedicoRoute,
+} as any)
+const AppGestaoCursosIdRoute = AppGestaoCursosIdRouteImport.update({
+  id: '/gestao-cursos/$id',
+  path: '/gestao-cursos/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 const MedicoMedicoLojaIndexRoute = MedicoMedicoLojaIndexRouteImport.update({
   id: '/medico/loja/',
@@ -162,9 +180,12 @@ export interface FileRoutesByFullPath {
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/cursos/$slug': typeof CursosSlugRoute
+  '/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/gestao-cursos/': typeof AppGestaoCursosIndexRoute
   '/medico/': typeof MedicoMedicoIndexRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
   '/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
@@ -185,9 +206,12 @@ export interface FileRoutesByTo {
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/cursos/$slug': typeof CursosSlugRoute
+  '/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/gestao-cursos': typeof AppGestaoCursosIndexRoute
   '/medico': typeof MedicoMedicoIndexRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
   '/medico/cursos': typeof MedicoMedicoCursosIndexRoute
@@ -211,9 +235,12 @@ export interface FileRoutesById {
   '/_app/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/cursos/$slug': typeof CursosSlugRoute
+  '/_app/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/_medico/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/_medico/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/_medico/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/_app/gestao-cursos/': typeof AppGestaoCursosIndexRoute
   '/_medico/medico/': typeof MedicoMedicoIndexRoute
   '/_medico/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
   '/_medico/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
@@ -236,9 +263,12 @@ export interface FileRouteTypes {
     | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/cursos/$slug'
+    | '/gestao-cursos/$id'
     | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
+    | '/gestao-cursos/'
     | '/medico/'
     | '/medico/cursos/$id'
     | '/medico/cursos/'
@@ -259,9 +289,12 @@ export interface FileRouteTypes {
     | '/medicos-pendentes'
     | '/notifications'
     | '/profile'
+    | '/cursos/$slug'
+    | '/gestao-cursos/$id'
     | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
+    | '/gestao-cursos'
     | '/medico'
     | '/medico/cursos/$id'
     | '/medico/cursos'
@@ -284,9 +317,12 @@ export interface FileRouteTypes {
     | '/_app/medicos-pendentes'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/cursos/$slug'
+    | '/_app/gestao-cursos/$id'
     | '/_medico/medico/indicar'
     | '/_medico/medico/pedidos'
     | '/_medico/medico/pendente'
+    | '/_app/gestao-cursos/'
     | '/_medico/medico/'
     | '/_medico/medico/cursos/$id'
     | '/_medico/medico/cursos/'
@@ -303,6 +339,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   RegisterMedicoRoute: typeof RegisterMedicoRoute
   VerificarEmailRoute: typeof VerificarEmailRoute
+  CursosSlugRoute: typeof CursosSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -370,6 +407,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cursos/$slug': {
+      id: '/cursos/$slug'
+      path: '/cursos/$slug'
+      fullPath: '/cursos/$slug'
+      preLoaderRoute: typeof CursosSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/profile': {
       id: '/_app/profile'
       path: '/profile'
@@ -426,6 +470,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicoMedicoIndexRouteImport
       parentRoute: typeof MedicoRoute
     }
+    '/_app/gestao-cursos/': {
+      id: '/_app/gestao-cursos/'
+      path: '/gestao-cursos'
+      fullPath: '/gestao-cursos/'
+      preLoaderRoute: typeof AppGestaoCursosIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_medico/medico/pendente': {
       id: '/_medico/medico/pendente'
       path: '/medico/pendente'
@@ -446,6 +497,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/medico/indicar'
       preLoaderRoute: typeof MedicoMedicoIndicarRouteImport
       parentRoute: typeof MedicoRoute
+    }
+    '/_app/gestao-cursos/$id': {
+      id: '/_app/gestao-cursos/$id'
+      path: '/gestao-cursos/$id'
+      fullPath: '/gestao-cursos/$id'
+      preLoaderRoute: typeof AppGestaoCursosIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_medico/medico/loja/': {
       id: '/_medico/medico/loja/'
@@ -479,6 +537,8 @@ interface AppRouteChildren {
   AppMedicosPendentesRoute: typeof AppMedicosPendentesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppGestaoCursosIdRoute: typeof AppGestaoCursosIdRoute
+  AppGestaoCursosIndexRoute: typeof AppGestaoCursosIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -489,6 +549,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedicosPendentesRoute: AppMedicosPendentesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppGestaoCursosIdRoute: AppGestaoCursosIdRoute,
+  AppGestaoCursosIndexRoute: AppGestaoCursosIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -526,6 +588,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   RegisterMedicoRoute: RegisterMedicoRoute,
   VerificarEmailRoute: VerificarEmailRoute,
+  CursosSlugRoute: CursosSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

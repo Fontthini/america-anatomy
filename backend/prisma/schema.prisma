@@ -225,9 +225,38 @@ model CatalogItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders Order[]
+  orders               Order[]
+  courseRegistrations  CourseRegistration[]
 
   @@index([type, status])
+}
+
+enum CourseRegistrationStatus {
+  NEW
+  CONTACTED
+  CONFIRMED
+  DECLINED
+}
+
+/// Lead de interesse num curso/seminário via formulário público (sem login,
+/// sem criar conta de médico) — usado por médicos parceiros que ainda não
+/// têm cadastro na plataforma. Diferente de Order (que exige conta aprovada).
+model CourseRegistration {
+  id            String                    @id @default(cuid())
+  catalogItemId String
+  name          String
+  email         String
+  crm           String?
+  whatsapp      String
+  notes         String?
+  status        CourseRegistrationStatus  @default(NEW)
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+
+  @@index([catalogItemId])
+  @@index([status])
 }
 
 enum OrderStatus {
@@ -291,6 +320,7 @@ enum NotificationType {
   ORDER_CREATED
   LEAD_ASSIGNED
   LEAD_REVIEW_REQUESTED
+  NEW_COURSE_REGISTRATION
 }
 
 model Notification {

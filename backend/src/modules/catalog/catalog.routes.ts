@@ -8,6 +8,11 @@ import {
   handleCreateCatalogItem,
   handleUpdateCatalogItem,
   handleArchiveCatalogItem,
+  handleGetPublicCourse,
+  handleCreateCourseRegistration,
+  handleListCourseRegistrations,
+  handleUpdateRegistrationStatus,
+  handleListEnrolledDoctors,
 } from "./catalog.controller.js";
 
 export async function catalogRoutes(app: FastifyInstance): Promise<void> {
@@ -29,4 +34,22 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
     { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleArchiveCatalogItem,
   );
+
+  // Página pública do curso — sem login, médico parceiro sem conta demonstra interesse.
+  app.get("/api/catalog/public/:slug", handleGetPublicCourse);
+  app.post("/api/catalog/:id/register-interest", handleCreateCourseRegistration);
+
+  // Staff — roster do curso: interessados (formulário público) + inscritos reais (Order).
+  const staffOnly = requireRole("MANAGER", "ADMIN");
+  app.get(
+    "/api/catalog/:id/registrations",
+    { preHandler: [authenticate, staffOnly] },
+    handleListCourseRegistrations,
+  );
+  app.patch(
+    "/api/catalog/:id/registrations/:regId",
+    { preHandler: [authenticate, staffOnly] },
+    handleUpdateRegistrationStatus,
+  );
+  app.get("/api/catalog/:id/orders", { preHandler: [authenticate, staffOnly] }, handleListEnrolledDoctors);
 }
