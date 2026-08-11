@@ -53,6 +53,7 @@ export type CreateCatalogItemPayload =
       description?: string;
       imageUrl?: string;
       price?: number;
+      category?: string;
       sku?: string;
       stockQty?: number;
     }

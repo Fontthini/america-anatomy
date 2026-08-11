@@ -28,10 +28,13 @@ import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
 import { Route as AppGestaoCursosIndexRouteImport } from './routes/_app.gestao-cursos.index'
+import { Route as AppCatalogoIndexRouteImport } from './routes/_app.catalogo.index'
 import { Route as MedicoMedicoPendenteRouteImport } from './routes/_medico.medico.pendente'
 import { Route as MedicoMedicoPedidosRouteImport } from './routes/_medico.medico.pedidos'
 import { Route as MedicoMedicoIndicarRouteImport } from './routes/_medico.medico.indicar'
 import { Route as AppGestaoCursosIdRouteImport } from './routes/_app.gestao-cursos.$id'
+import { Route as AppCatalogoNovoRouteImport } from './routes/_app.catalogo.novo'
+import { Route as AppCatalogoIdRouteImport } from './routes/_app.catalogo.$id'
 import { Route as MedicoMedicoLojaIndexRouteImport } from './routes/_medico.medico.loja.index'
 import { Route as MedicoMedicoCursosIndexRouteImport } from './routes/_medico.medico.cursos.index'
 import { Route as MedicoMedicoCursosIdRouteImport } from './routes/_medico.medico.cursos.$id'
@@ -129,6 +132,11 @@ const AppGestaoCursosIndexRoute = AppGestaoCursosIndexRouteImport.update({
   path: '/gestao-cursos/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCatalogoIndexRoute = AppCatalogoIndexRouteImport.update({
+  id: '/catalogo/',
+  path: '/catalogo/',
+  getParentRoute: () => AppRoute,
+} as any)
 const MedicoMedicoPendenteRoute = MedicoMedicoPendenteRouteImport.update({
   id: '/medico/pendente',
   path: '/medico/pendente',
@@ -147,6 +155,16 @@ const MedicoMedicoIndicarRoute = MedicoMedicoIndicarRouteImport.update({
 const AppGestaoCursosIdRoute = AppGestaoCursosIdRouteImport.update({
   id: '/gestao-cursos/$id',
   path: '/gestao-cursos/$id',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogoNovoRoute = AppCatalogoNovoRouteImport.update({
+  id: '/catalogo/novo',
+  path: '/catalogo/novo',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCatalogoIdRoute = AppCatalogoIdRouteImport.update({
+  id: '/catalogo/$id',
+  path: '/catalogo/$id',
   getParentRoute: () => AppRoute,
 } as any)
 const MedicoMedicoLojaIndexRoute = MedicoMedicoLojaIndexRouteImport.update({
@@ -181,10 +199,13 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/catalogo/$id': typeof AppCatalogoIdRoute
+  '/catalogo/novo': typeof AppCatalogoNovoRoute
   '/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/catalogo/': typeof AppCatalogoIndexRoute
   '/gestao-cursos/': typeof AppGestaoCursosIndexRoute
   '/medico/': typeof MedicoMedicoIndexRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
@@ -207,10 +228,13 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/catalogo/$id': typeof AppCatalogoIdRoute
+  '/catalogo/novo': typeof AppCatalogoNovoRoute
   '/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/catalogo': typeof AppCatalogoIndexRoute
   '/gestao-cursos': typeof AppGestaoCursosIndexRoute
   '/medico': typeof MedicoMedicoIndexRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
@@ -236,10 +260,13 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/_app/catalogo/$id': typeof AppCatalogoIdRoute
+  '/_app/catalogo/novo': typeof AppCatalogoNovoRoute
   '/_app/gestao-cursos/$id': typeof AppGestaoCursosIdRoute
   '/_medico/medico/indicar': typeof MedicoMedicoIndicarRoute
   '/_medico/medico/pedidos': typeof MedicoMedicoPedidosRoute
   '/_medico/medico/pendente': typeof MedicoMedicoPendenteRoute
+  '/_app/catalogo/': typeof AppCatalogoIndexRoute
   '/_app/gestao-cursos/': typeof AppGestaoCursosIndexRoute
   '/_medico/medico/': typeof MedicoMedicoIndexRoute
   '/_medico/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
@@ -264,10 +291,13 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/cursos/$slug'
+    | '/catalogo/$id'
+    | '/catalogo/novo'
     | '/gestao-cursos/$id'
     | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
+    | '/catalogo/'
     | '/gestao-cursos/'
     | '/medico/'
     | '/medico/cursos/$id'
@@ -290,10 +320,13 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/cursos/$slug'
+    | '/catalogo/$id'
+    | '/catalogo/novo'
     | '/gestao-cursos/$id'
     | '/medico/indicar'
     | '/medico/pedidos'
     | '/medico/pendente'
+    | '/catalogo'
     | '/gestao-cursos'
     | '/medico'
     | '/medico/cursos/$id'
@@ -318,10 +351,13 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/profile'
     | '/cursos/$slug'
+    | '/_app/catalogo/$id'
+    | '/_app/catalogo/novo'
     | '/_app/gestao-cursos/$id'
     | '/_medico/medico/indicar'
     | '/_medico/medico/pedidos'
     | '/_medico/medico/pendente'
+    | '/_app/catalogo/'
     | '/_app/gestao-cursos/'
     | '/_medico/medico/'
     | '/_medico/medico/cursos/$id'
@@ -477,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGestaoCursosIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/catalogo/': {
+      id: '/_app/catalogo/'
+      path: '/catalogo'
+      fullPath: '/catalogo/'
+      preLoaderRoute: typeof AppCatalogoIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_medico/medico/pendente': {
       id: '/_medico/medico/pendente'
       path: '/medico/pendente'
@@ -503,6 +546,20 @@ declare module '@tanstack/react-router' {
       path: '/gestao-cursos/$id'
       fullPath: '/gestao-cursos/$id'
       preLoaderRoute: typeof AppGestaoCursosIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogo/novo': {
+      id: '/_app/catalogo/novo'
+      path: '/catalogo/novo'
+      fullPath: '/catalogo/novo'
+      preLoaderRoute: typeof AppCatalogoNovoRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/catalogo/$id': {
+      id: '/_app/catalogo/$id'
+      path: '/catalogo/$id'
+      fullPath: '/catalogo/$id'
+      preLoaderRoute: typeof AppCatalogoIdRouteImport
       parentRoute: typeof AppRoute
     }
     '/_medico/medico/loja/': {
@@ -537,7 +594,10 @@ interface AppRouteChildren {
   AppMedicosPendentesRoute: typeof AppMedicosPendentesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppCatalogoIdRoute: typeof AppCatalogoIdRoute
+  AppCatalogoNovoRoute: typeof AppCatalogoNovoRoute
   AppGestaoCursosIdRoute: typeof AppGestaoCursosIdRoute
+  AppCatalogoIndexRoute: typeof AppCatalogoIndexRoute
   AppGestaoCursosIndexRoute: typeof AppGestaoCursosIndexRoute
 }
 
@@ -549,7 +609,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppMedicosPendentesRoute: AppMedicosPendentesRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppCatalogoIdRoute: AppCatalogoIdRoute,
+  AppCatalogoNovoRoute: AppCatalogoNovoRoute,
   AppGestaoCursosIdRoute: AppGestaoCursosIdRoute,
+  AppCatalogoIndexRoute: AppCatalogoIndexRoute,
   AppGestaoCursosIndexRoute: AppGestaoCursosIndexRoute,
 }
 

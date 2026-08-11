@@ -14,6 +14,7 @@ import {
   Share2,
   Wallet,
   GraduationCap,
+  Package,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
@@ -34,6 +35,7 @@ const items: Item[] = [
   { to: "/funil", label: "Funil", icon: KanbanSquare, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
   { to: "/indicacoes", label: "Indicações", icon: Share2, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["MANAGER", "ADMIN"] },
+  { to: "/catalogo", label: "Catálogo", icon: Package, roles: ["MANAGER", "ADMIN"] },
   { to: "/gestao-cursos", label: "Cursos", icon: GraduationCap, roles: ["MANAGER", "ADMIN"] },
   { to: "/medicos-pendentes", label: "Médicos Pendentes", icon: UserCheck, roles: ["MANAGER", "ADMIN"] },
   { to: "/dashboard", label: "Analytics", icon: BarChart3, disabled: true },
