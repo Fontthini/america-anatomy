@@ -15,6 +15,7 @@ const eventFields = {
   location: z.string().max(200).optional(),
   isOnline: z.boolean().default(false),
   capacity: z.number().int().positive().optional(),
+  instructorUserId: z.string().optional(),
 };
 
 export const createCatalogItemSchema = z.discriminatedUnion("type", [
@@ -40,6 +41,7 @@ export const updateCatalogItemSchema = z.object({
   location: z.string().max(200).optional(),
   isOnline: z.boolean().optional(),
   capacity: z.number().int().positive().optional(),
+  instructorUserId: z.string().nullable().optional(),
   sku: z.string().max(50).optional(),
   stockQty: z.number().int().nonnegative().optional(),
 });
@@ -69,6 +71,8 @@ export type CatalogItemResponse = {
   isOnline: boolean;
   capacity: number | null;
   vagasRestantes: number | null;
+  instructorUserId: string | null;
+  instructorName: string | null;
   sku: string | null;
   stockQty: number | null;
   createdAt: string;

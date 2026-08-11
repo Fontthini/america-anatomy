@@ -141,16 +141,9 @@ function CoursesPage() {
             <Link key={item.id} to="/medico/cursos/$id" params={{ id: item.id }}>
               <Card className="group flex h-full flex-col transition-colors hover:border-line-strong">
                 <CardBody className="flex flex-1 flex-col gap-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-wrap gap-1.5">
-                      <Badge tone="accent">{typeLabels[item.type]}</Badge>
-                      {item.category && <Badge tone="muted">{item.category}</Badge>}
-                    </div>
-                    {item.vagasRestantes !== null && (
-                      <Badge tone={item.vagasRestantes > 0 ? "neutral" : "danger"}>
-                        {item.vagasRestantes > 0 ? `${item.vagasRestantes} vagas` : "Esgotado"}
-                      </Badge>
-                    )}
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge tone="accent">{typeLabels[item.type]}</Badge>
+                    {item.category && <Badge tone="muted">{item.category}</Badge>}
                   </div>
                   <h3 className="font-display text-lg text-fg">{item.title}</h3>
                   {item.description && (

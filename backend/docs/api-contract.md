@@ -85,6 +85,7 @@ Todos os erros seguem este shape:
 | `COURSE_MATERIAL_NOT_FOUND` | 404 | Material de curso inexistente |
 | `ARTICLE_NOT_FOUND` | 404 | Artigo inexistente, ou não publicado para quem não é staff/admin |
 | `BANNER_NOT_FOUND` | 404 | Banner inexistente |
+| `AMBASSADOR_APPLICATION_NOT_FOUND` | 404 | Candidatura de embaixador inexistente |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -561,11 +562,15 @@ Catálogo unificado — um único recurso com `type: "PRODUCT" | "COURSE" | "SEM
   isOnline: boolean;
   capacity: number | null;
   vagasRestantes: number | null; // calculado: capacity - pedidos CONFIRMED
+  instructorUserId: string | null; // COURSE/SEMINAR — médico parceiro instrutor responsável
+  instructorName: string | null;
   sku: string | null;           // PRODUCT
   stockQty: number | null;      // PRODUCT
   createdAt: string;
 }[]
 ```
+
+> Nota de produto: o frontend do médico (Cursos, landing pública) deliberadamente **não exibe** `vagasRestantes`/`capacity` — a informação existe na API (staff usa pra gestão), mas fica oculta pra quem não é staff.
 
 **Erros:** `403 DOCTOR_NOT_APPROVED`
 
@@ -594,8 +599,9 @@ Cria item de catálogo (sempre `status: "DRAFT"` — publicar é uma atualizaç�
 
 **Request body (`type: "COURSE" | "SEMINAR"`):**
 ```json
-{ "type": "SEMINAR", "title": "string", "startsAt": "2026-09-01T13:00:00Z", "endsAt": "2026-09-01T18:00:00Z", "location": "string", "isOnline": false, "capacity": 30, "price": 0 }
+{ "type": "SEMINAR", "title": "string", "startsAt": "2026-09-01T13:00:00Z", "endsAt": "2026-09-01T18:00:00Z", "location": "string", "isOnline": false, "capacity": 30, "price": 0, "instructorUserId": "string" }
 ```
+`instructorUserId` (opcional) referencia um `User` — normalmente um médico (`DOCTOR`) que vira dono do "Painel do Instrutor" pra esse item.
 
 **Response `201`:** `CatalogItemResponse`
 
@@ -868,9 +874,11 @@ Registra o interesse (não cria conta). `:id` é o `CatalogItem.id` do curso/sem
 
 ### `GET /api/catalog/:id/registrations`
 
-Lista os interessados via formulário público de um curso — staff.
+Lista os interessados via formulário público de um curso.
 
-**Auth:** role `MANAGER`/`ADMIN` — **Response `200`:** array de `CourseRegistrationResponse`
+**Auth:** autenticado + aprovado. Staff (`MANAGER`/`ADMIN`) sempre acessa; médico só se for `instructorUserId` daquele item — senão `403 FORBIDDEN`.
+
+**Response `200`:** array de `CourseRegistrationResponse`
 
 ---
 
@@ -878,7 +886,7 @@ Lista os interessados via formulário público de um curso — staff.
 
 Atualiza o status de acompanhamento de um interessado (ex.: depois de contatar por WhatsApp).
 
-**Auth:** role `MANAGER`/`ADMIN`
+**Auth:** igual ao GET acima (staff ou instrutor do curso).
 
 **Request body:** `{ "status": "CONTACTED" }`
 
@@ -886,9 +894,9 @@ Atualiza o status de acompanhamento de um interessado (ex.: depois de contatar p
 
 ### `GET /api/catalog/:id/orders`
 
-Roster de médicos que **já têm conta** e se inscreveram de verdade (via `Order` confirmado) naquele curso — staff.
+Roster de médicos que **já têm conta** e se inscreveram de verdade (via `Order` confirmado) naquele curso.
 
-**Auth:** role `MANAGER`/`ADMIN`
+**Auth:** staff ou instrutor do curso (mesma regra acima).
 
 **Response `200`:**
 ```typescript
@@ -897,12 +905,20 @@ Roster de médicos que **já têm conta** e se inscreveram de verdade (via `Orde
 
 ---
 
+### `GET /api/catalog/instructor/mine`
+
+Cursos/seminários onde o médico autenticado é `instructorUserId` — alimenta o "Painel do Instrutor" (`/medico/painel-instrutor`).
+
+**Auth:** autenticado + aprovado — **Response `200`:** array de `CatalogItemResponse`
+
+---
+
 ## Materiais do curso (`/api/catalog/:id/materials`)
 
-Vídeos/PDFs/links liberados dentro de um curso — o médico só enxerga depois de se inscrever (mesma regra que gera o `Order` confirmado usado no roster acima).
+Vídeos/PDFs/links liberados dentro de um curso.
 
 ### `GET /api/catalog/:id/materials`
-**Auth:** autenticado + aprovado. Staff (`MANAGER`/`ADMIN`) sempre vê; médico só vê se tiver `Order` `CONFIRMED` nesse item — senão `403 ENROLLMENT_REQUIRED`.
+**Auth:** autenticado + aprovado. Staff e o instrutor do curso sempre veem; outro médico só vê se tiver `Order` `CONFIRMED` nesse item — senão `403 ENROLLMENT_REQUIRED`.
 
 **Response `200`:**
 ```typescript
@@ -910,7 +926,7 @@ Vídeos/PDFs/links liberados dentro de um curso — o médico só enxerga depois
 ```
 
 ### `POST /api/catalog/:id/materials` · `PATCH /api/catalog/:id/materials/:materialId` · `DELETE /api/catalog/:id/materials/:materialId`
-CRUD de materiais. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ title, type, url, order? }`; `PATCH` aceita subconjunto parcial.
+CRUD de materiais. **Auth:** `MANAGER`/`ADMIN` ou o instrutor responsável pelo curso (senão `403 FORBIDDEN`). `POST` body = `{ title, type, url, order? }`; `PATCH` aceita subconjunto parcial.
 
 ---
 
@@ -948,6 +964,28 @@ Carrossel full-bleed exibido no topo da Loja e do Blog — pools independentes p
 
 ### `POST /api/banners` · `PATCH /api/banners/:id` · `DELETE /api/banners/:id`
 CRUD de banners. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ placement, imageUrl, title?, subtitle?, active?, order? }`.
+
+---
+
+## Embaixadores (`/api/ambassadors/`)
+
+Candidatura ao Programa de Embaixadores AAI — formulário público (`/embaixadores`, sem login, sem criar conta), mesmo padrão de `CourseRegistration`. Gestão em `/gestao-embaixadores` (staff).
+
+### `POST /api/ambassadors/apply`
+**Auth:** nenhuma
+
+**Request body:**
+```json
+{ "name": "string", "email": "string", "whatsapp": "string", "profileType": "string", "alreadyKnowsAai": true, "availableForLives": true, "hasNetwork": false, "notes": "string" }
+```
+
+**Response `201`:** `AmbassadorApplicationResponse`
+```typescript
+{ id: string; name: string; email: string; whatsapp: string; profileType: string; alreadyKnowsAai: boolean; availableForLives: boolean; hasNetwork: boolean; notes: string | null; status: "NEW" | "CONTACTED" | "APPROVED" | "REJECTED"; createdAt: string; }
+```
+
+### `GET /api/ambassadors` · `PATCH /api/ambassadors/:id/status`
+**Auth:** `MANAGER`/`ADMIN`. `PATCH` body = `{ "status": "APPROVED" }`. Sem endpoint de delete (mesmo padrão de `CourseRegistration` — rejeitar é uma mudança de status, não uma remoção).
 
 ---
 

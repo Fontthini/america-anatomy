@@ -17,6 +17,7 @@ import {
   handleCreateCourseMaterial,
   handleUpdateCourseMaterial,
   handleDeleteCourseMaterial,
+  handleListMyInstructedCourses,
 } from "./catalog.controller.js";
 
 export async function catalogRoutes(app: FastifyInstance): Promise<void> {
@@ -43,21 +44,28 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
   app.get("/api/catalog/public/:slug", handleGetPublicCourse);
   app.post("/api/catalog/:id/register-interest", handleCreateCourseRegistration);
 
-  // Staff — roster do curso: interessados (formulário público) + inscritos reais (Order).
-  const staffOnly = requireRole("MANAGER", "ADMIN");
+  // Cursos onde o médico logado é o instrutor responsável — "Painel do Instrutor".
+  app.get(
+    "/api/catalog/instructor/mine",
+    { preHandler: [authenticate, requireApproved] },
+    handleListMyInstructedCourses,
+  );
+
+  // Roster do curso: interessados (formulário público) + inscritos reais (Order).
+  // Staff sempre acessa; médico só se for o instrutor responsável (checado no service).
   app.get(
     "/api/catalog/:id/registrations",
-    { preHandler: [authenticate, staffOnly] },
+    { preHandler: [authenticate, requireApproved] },
     handleListCourseRegistrations,
   );
   app.patch(
     "/api/catalog/:id/registrations/:regId",
-    { preHandler: [authenticate, staffOnly] },
+    { preHandler: [authenticate, requireApproved] },
     handleUpdateRegistrationStatus,
   );
-  app.get("/api/catalog/:id/orders", { preHandler: [authenticate, staffOnly] }, handleListEnrolledDoctors);
+  app.get("/api/catalog/:id/orders", { preHandler: [authenticate, requireApproved] }, handleListEnrolledDoctors);
 
-  // Materiais do curso (vídeos/PDFs/links) — médico só vê se estiver inscrito; staff sempre.
+  // Materiais do curso (vídeos/PDFs/links) — médico vê se inscrito ou instrutor; gerencia se instrutor ou staff.
   app.get(
     "/api/catalog/:id/materials",
     { preHandler: [authenticate, requireApproved] },
@@ -65,17 +73,17 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
   );
   app.post(
     "/api/catalog/:id/materials",
-    { preHandler: [authenticate, staffOnly] },
+    { preHandler: [authenticate, requireApproved] },
     handleCreateCourseMaterial,
   );
   app.patch(
     "/api/catalog/:id/materials/:materialId",
-    { preHandler: [authenticate, staffOnly] },
+    { preHandler: [authenticate, requireApproved] },
     handleUpdateCourseMaterial,
   );
   app.delete(
     "/api/catalog/:id/materials/:materialId",
-    { preHandler: [authenticate, staffOnly] },
+    { preHandler: [authenticate, requireApproved] },
     handleDeleteCourseMaterial,
   );
 }

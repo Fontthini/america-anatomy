@@ -36,7 +36,9 @@ async function generateUniqueSlug(title: string): Promise<string> {
   return slug;
 }
 
-function toCatalogItemResponse(item: CatalogItem, confirmedOrders: number): CatalogItemResponse {
+type CatalogItemWithInstructor = CatalogItem & { instructor?: { name: string } | null };
+
+function toCatalogItemResponse(item: CatalogItemWithInstructor, confirmedOrders: number): CatalogItemResponse {
   return {
     id: item.id,
     type: item.type,
@@ -53,6 +55,8 @@ function toCatalogItemResponse(item: CatalogItem, confirmedOrders: number): Cata
     isOnline: item.isOnline,
     capacity: item.capacity,
     vagasRestantes: item.capacity !== null ? Math.max(item.capacity - confirmedOrders, 0) : null,
+    instructorUserId: item.instructorUserId,
+    instructorName: item.instructor?.name ?? null,
     sku: item.sku,
     stockQty: item.stockQty,
     createdAt: item.createdAt.toISOString(),
@@ -78,7 +82,11 @@ export async function listCatalogItems(
     ...(query.type ? { type: query.type } : {}),
     status: isStaffOrAdmin ? query.status : "PUBLISHED",
   };
-  const items = await prisma.catalogItem.findMany({ where, orderBy: { createdAt: "desc" } });
+  const items = await prisma.catalogItem.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    include: { instructor: { select: { name: true } } },
+  });
   const counts = await countConfirmedOrdersByItem(items.map((i) => i.id));
   return items.map((item) => toCatalogItemResponse(item, counts.get(item.id) ?? 0));
 }
@@ -87,7 +95,10 @@ export async function getCatalogItemById(
   id: string,
   isStaffOrAdmin: boolean,
 ): Promise<CatalogItemResponse> {
-  const item = await prisma.catalogItem.findUnique({ where: { id } });
+  const item = await prisma.catalogItem.findUnique({
+    where: { id },
+    include: { instructor: { select: { name: true } } },
+  });
   if (!item || (!isStaffOrAdmin && item.status !== "PUBLISHED")) {
     throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Item de catálogo não encontrado.");
   }
@@ -114,8 +125,10 @@ export async function createCatalogItem(input: CreateCatalogItemInput): Promise<
             location: input.location,
             isOnline: input.isOnline,
             capacity: input.capacity,
+            instructorUserId: input.instructorUserId,
           }),
     },
+    include: { instructor: { select: { name: true } } },
   });
   return toCatalogItemResponse(item, 0);
 }
@@ -128,7 +141,11 @@ export async function updateCatalogItem(
   if (!existing) {
     throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Item de catálogo não encontrado.");
   }
-  const item = await prisma.catalogItem.update({ where: { id }, data: input });
+  const item = await prisma.catalogItem.update({
+    where: { id },
+    data: input,
+    include: { instructor: { select: { name: true } } },
+  });
   const counts = await countConfirmedOrdersByItem([item.id]);
   return toCatalogItemResponse(item, counts.get(item.id) ?? 0);
 }
@@ -186,6 +203,26 @@ async function findEventItemOrThrow(catalogItemId: string): Promise<CatalogItem>
   return item;
 }
 
+/** Staff sempre passa; médico só se for o instrutor responsável por aquele item. */
+async function assertCourseAccess(catalogItemId: string, userId: string, isStaffOrAdmin: boolean): Promise<void> {
+  if (isStaffOrAdmin) return;
+  const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId }, select: { instructorUserId: true } });
+  if (!item || item.instructorUserId !== userId) {
+    throw new AppError(403, "FORBIDDEN", "Você não tem permissão para acessar este curso.");
+  }
+}
+
+/** Cursos/seminários onde o médico logado é o instrutor responsável — "Painel do Instrutor". */
+export async function listMyInstructedCourses(userId: string): Promise<CatalogItemResponse[]> {
+  const items = await prisma.catalogItem.findMany({
+    where: { instructorUserId: userId },
+    orderBy: { startsAt: "asc" },
+    include: { instructor: { select: { name: true } } },
+  });
+  const counts = await countConfirmedOrdersByItem(items.map((i) => i.id));
+  return items.map((item) => toCatalogItemResponse(item, counts.get(item.id) ?? 0));
+}
+
 /** Formulário público — médico parceiro sem conta demonstra interesse num curso/seminário. */
 export async function createCourseRegistration(
   catalogItemId: string,
@@ -205,7 +242,12 @@ export async function createCourseRegistration(
   return toCourseRegistrationResponse(registration);
 }
 
-export async function listCourseRegistrations(catalogItemId: string): Promise<CourseRegistrationResponse[]> {
+export async function listCourseRegistrations(
+  catalogItemId: string,
+  userId: string,
+  isStaffOrAdmin: boolean,
+): Promise<CourseRegistrationResponse[]> {
+  await assertCourseAccess(catalogItemId, userId, isStaffOrAdmin);
   const registrations = await prisma.courseRegistration.findMany({
     where: { catalogItemId },
     orderBy: { createdAt: "desc" },
@@ -216,17 +258,25 @@ export async function listCourseRegistrations(catalogItemId: string): Promise<Co
 export async function updateRegistrationStatus(
   registrationId: string,
   status: CourseRegistrationStatus,
+  userId: string,
+  isStaffOrAdmin: boolean,
 ): Promise<CourseRegistrationResponse> {
   const existing = await prisma.courseRegistration.findUnique({ where: { id: registrationId } });
   if (!existing) {
     throw new AppError(404, "COURSE_REGISTRATION_NOT_FOUND", "Inscrição não encontrada.");
   }
+  await assertCourseAccess(existing.catalogItemId, userId, isStaffOrAdmin);
   const updated = await prisma.courseRegistration.update({ where: { id: registrationId }, data: { status } });
   return toCourseRegistrationResponse(updated);
 }
 
 /** Médicos que já têm conta e se inscreveram de verdade (Order confirmado) — roster real do curso. */
-export async function listEnrolledDoctors(catalogItemId: string): Promise<EnrolledDoctorResponse[]> {
+export async function listEnrolledDoctors(
+  catalogItemId: string,
+  userId: string,
+  isStaffOrAdmin: boolean,
+): Promise<EnrolledDoctorResponse[]> {
+  await assertCourseAccess(catalogItemId, userId, isStaffOrAdmin);
   const orders = await prisma.order.findMany({
     where: { catalogItemId, status: "CONFIRMED" },
     include: { doctorProfile: { include: { user: true } } },
@@ -267,16 +317,20 @@ async function isDoctorEnrolled(userId: string, catalogItemId: string): Promise<
   return order !== null;
 }
 
-/** Médico só vê os materiais se estiver inscrito (Order confirmado) no curso; staff/admin sempre vê. */
+/** Médico vê os materiais se estiver inscrito (Order confirmado) OU for o instrutor do curso; staff/admin sempre vê. */
 export async function listCourseMaterials(
   catalogItemId: string,
   userId: string,
   isStaffOrAdmin: boolean,
 ): Promise<CourseMaterialResponse[]> {
   if (!isStaffOrAdmin) {
-    const enrolled = await isDoctorEnrolled(userId, catalogItemId);
-    if (!enrolled) {
-      throw new AppError(403, "ENROLLMENT_REQUIRED", "Inscreva-se neste curso para acessar os materiais.");
+    const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId }, select: { instructorUserId: true } });
+    const isInstructor = item?.instructorUserId === userId;
+    if (!isInstructor) {
+      const enrolled = await isDoctorEnrolled(userId, catalogItemId);
+      if (!enrolled) {
+        throw new AppError(403, "ENROLLMENT_REQUIRED", "Inscreva-se neste curso para acessar os materiais.");
+      }
     }
   }
   const materials = await prisma.courseMaterial.findMany({
@@ -289,11 +343,14 @@ export async function listCourseMaterials(
 export async function createCourseMaterial(
   catalogItemId: string,
   input: CreateCourseMaterialInput,
+  userId: string,
+  isStaffOrAdmin: boolean,
 ): Promise<CourseMaterialResponse> {
   const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId } });
   if (!item) {
     throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Item de catálogo não encontrado.");
   }
+  await assertCourseAccess(catalogItemId, userId, isStaffOrAdmin);
   const material = await prisma.courseMaterial.create({ data: { catalogItemId, ...input } });
   return toCourseMaterialResponse(material);
 }
@@ -301,19 +358,23 @@ export async function createCourseMaterial(
 export async function updateCourseMaterial(
   materialId: string,
   input: UpdateCourseMaterialInput,
+  userId: string,
+  isStaffOrAdmin: boolean,
 ): Promise<CourseMaterialResponse> {
   const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
   if (!existing) {
     throw new AppError(404, "COURSE_MATERIAL_NOT_FOUND", "Material não encontrado.");
   }
+  await assertCourseAccess(existing.catalogItemId, userId, isStaffOrAdmin);
   const material = await prisma.courseMaterial.update({ where: { id: materialId }, data: input });
   return toCourseMaterialResponse(material);
 }
 
-export async function deleteCourseMaterial(materialId: string): Promise<void> {
+export async function deleteCourseMaterial(materialId: string, userId: string, isStaffOrAdmin: boolean): Promise<void> {
   const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
   if (!existing) {
     throw new AppError(404, "COURSE_MATERIAL_NOT_FOUND", "Material não encontrado.");
   }
+  await assertCourseAccess(existing.catalogItemId, userId, isStaffOrAdmin);
   await prisma.courseMaterial.delete({ where: { id: materialId } });
 }

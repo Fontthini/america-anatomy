@@ -116,21 +116,32 @@ Comissão é lançamento manual único (409 se repetir) que cria automaticamente
 | PUT | `/api/referrals/:id/commission` | Bearer + `requireRole(MANAGER,ADMIN)` | `200 ReferralResponse` | 409 se já paga |
 
 ### Inscrição pública em curso (`/api/catalog`) — sem login
-Médico parceiro sem conta demonstra interesse num curso via formulário público, sem criar `User`.
+Médico parceiro sem conta demonstra interesse num curso via formulário público, sem criar `User`. Roster
+(`registrations`, `orders`) e materiais são acessíveis por staff **ou** pelo `instructorUserId` do item — checado
+no service (`assertCourseAccess`), não no middleware de rota.
 | Método | Rota | Auth | Response |
 |--------|------|------|----------|
 | GET | `/api/catalog/public/:slug` | — | `200 PublicCatalogItemResponse` (só PUBLISHED COURSE/SEMINAR) |
 | POST | `/api/catalog/:id/register-interest` | — | `201 CourseRegistrationResponse` |
-| GET | `/api/catalog/:id/registrations` | Bearer + `requireRole(MANAGER,ADMIN)` | `200 CourseRegistrationResponse[]` |
+| GET | `/api/catalog/instructor/mine` | Bearer + `requireApproved` | `200 CatalogItemResponse[]` — cursos onde o médico logado é instrutor |
+| GET | `/api/catalog/:id/registrations` | Bearer + `requireApproved` | `200 CourseRegistrationResponse[]` — staff ou instrutor |
 | PATCH | `/api/catalog/:id/registrations/:regId` | idem | `200 CourseRegistrationResponse` — body `{status}` |
 | GET | `/api/catalog/:id/orders` | idem | `200 EnrolledDoctorResponse[]` — quem já tem conta e se inscreveu de verdade |
 
 ### Materiais do curso (`/api/catalog/:id/materials`) — vídeos/PDFs/links
-Médico só vê se tiver `Order` CONFIRMED naquele item (senão `403 ENROLLMENT_REQUIRED`); staff sempre vê.
+Médico vê se tiver `Order` CONFIRMED **ou** for o instrutor (senão `403 ENROLLMENT_REQUIRED`); staff sempre vê.
+Gestão (POST/PATCH/DELETE) é staff ou instrutor do curso (senão `403 FORBIDDEN`).
 | Método | Rota | Auth | Response |
 |--------|------|------|----------|
 | GET | `/api/catalog/:id/materials` | Bearer + `requireApproved` | `200 CourseMaterialResponse[]` |
-| POST/PATCH/DELETE | `/api/catalog/:id/materials[/:materialId]` | Bearer + `requireRole(MANAGER,ADMIN)` | CRUD |
+| POST/PATCH/DELETE | `/api/catalog/:id/materials[/:materialId]` | Bearer + `requireApproved` | CRUD, ownership checado no service |
+
+### Embaixadores (`/api/ambassadors`) — programa de embaixadores, sem login
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| POST | `/api/ambassadors/apply` | — | `201 AmbassadorApplicationResponse` |
+| GET | `/api/ambassadors` | Bearer + `requireRole(MANAGER,ADMIN)` | `200 AmbassadorApplicationResponse[]` |
+| PATCH | `/api/ambassadors/:id/status` | idem | `200 AmbassadorApplicationResponse` — body `{status}` |
 
 ### Blog / Artigos científicos (`/api/articles`)
 Médico só vê `published: true`; staff vê tudo (inclui rascunho). Sem rota pública/slug — acesso só autenticado.
@@ -174,6 +185,7 @@ Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.
 `LEAD_NOT_FOUND`, `LEAD_ALREADY_ASSIGNED`, `REFERRAL_NOT_FOUND`,
 `COMMISSION_ALREADY_PAID`, `FINANCIAL_ENTRY_NOT_FOUND`,
 `ENROLLMENT_REQUIRED`, `COURSE_MATERIAL_NOT_FOUND`, `ARTICLE_NOT_FOUND`, `BANNER_NOT_FOUND`,
+`AMBASSADOR_APPLICATION_NOT_FOUND`,
 `INTERNAL_ERROR`
 
 ---

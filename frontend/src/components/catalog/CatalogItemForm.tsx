@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardBody } from "../ui/Card";
 import { Button } from "../ui/Button";
 import { Input } from "../ui/Input";
@@ -7,6 +8,7 @@ import { Textarea } from "../ui/Textarea";
 import { Checkbox } from "../ui/Checkbox";
 import { cn } from "../../lib/cn";
 import type { CatalogItemResponse, CatalogItemType, CreateCatalogItemPayload } from "../../lib/api/catalog";
+import { apiListDoctors } from "../../lib/api/doctors";
 
 const typeOptions: { value: CatalogItemType; label: string }[] = [
   { value: "PRODUCT", label: "Produto" },
@@ -47,8 +49,15 @@ export function CatalogItemForm({
   const [location, setLocation] = useState(initial?.location ?? "");
   const [isOnline, setIsOnline] = useState(initial?.isOnline ?? false);
   const [capacity, setCapacity] = useState(initial?.capacity?.toString() ?? "");
+  const [instructorUserId, setInstructorUserId] = useState(initial?.instructorUserId ?? "");
 
   const isEvent = type === "COURSE" || type === "SEMINAR";
+
+  const { data: doctors = [] } = useQuery({
+    queryKey: ["doctors", "APPROVED"],
+    queryFn: () => apiListDoctors("APPROVED"),
+    enabled: isEvent,
+  });
 
   function handleSubmit(ev: FormEvent) {
     ev.preventDefault();
@@ -76,6 +85,7 @@ export function CatalogItemForm({
         location: location || undefined,
         isOnline,
         capacity: capacity ? Number(capacity) : undefined,
+        instructorUserId: instructorUserId || undefined,
       });
     }
   }
@@ -170,6 +180,22 @@ export function CatalogItemForm({
                 </div>
               </div>
               <Checkbox checked={isOnline} onChange={(e) => setIsOnline(e.target.checked)} label="Evento online" />
+              <div className="space-y-1.5">
+                <Label htmlFor="instructorUserId">Instrutor responsável (opcional)</Label>
+                <select
+                  id="instructorUserId"
+                  value={instructorUserId}
+                  onChange={(e) => setInstructorUserId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-line bg-surface-1 px-3 text-sm text-fg focus:border-accent/60 focus:outline-none"
+                >
+                  <option value="">Nenhum</option>
+                  {doctors.map((d) => (
+                    <option key={d.userId} value={d.userId}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </>
           )}
 

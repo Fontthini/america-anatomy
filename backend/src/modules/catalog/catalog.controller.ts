@@ -23,6 +23,7 @@ import {
   createCourseMaterial,
   updateCourseMaterial,
   deleteCourseMaterial,
+  listMyInstructedCourses,
 } from "./catalog.service.js";
 
 function isStaffOrAdmin(req: FastifyRequest): boolean {
@@ -75,20 +76,20 @@ export async function handleCreateCourseRegistration(req: FastifyRequest, reply:
 
 export async function handleListCourseRegistrations(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { id } = req.params as { id: string };
-  const registrations = await listCourseRegistrations(id);
+  const registrations = await listCourseRegistrations(id, req.user.id, isStaffOrAdmin(req));
   reply.status(200).send(registrations);
 }
 
 export async function handleUpdateRegistrationStatus(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { regId } = req.params as { id: string; regId: string };
   const input = updateRegistrationStatusSchema.parse(req.body);
-  const registration = await updateRegistrationStatus(regId, input.status);
+  const registration = await updateRegistrationStatus(regId, input.status, req.user.id, isStaffOrAdmin(req));
   reply.status(200).send(registration);
 }
 
 export async function handleListEnrolledDoctors(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { id } = req.params as { id: string };
-  const enrolled = await listEnrolledDoctors(id);
+  const enrolled = await listEnrolledDoctors(id, req.user.id, isStaffOrAdmin(req));
   reply.status(200).send(enrolled);
 }
 
@@ -101,19 +102,24 @@ export async function handleListCourseMaterials(req: FastifyRequest, reply: Fast
 export async function handleCreateCourseMaterial(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { id } = req.params as { id: string };
   const input = createCourseMaterialSchema.parse(req.body);
-  const material = await createCourseMaterial(id, input);
+  const material = await createCourseMaterial(id, input, req.user.id, isStaffOrAdmin(req));
   reply.status(201).send(material);
 }
 
 export async function handleUpdateCourseMaterial(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { materialId } = req.params as { id: string; materialId: string };
   const input = updateCourseMaterialSchema.parse(req.body);
-  const material = await updateCourseMaterial(materialId, input);
+  const material = await updateCourseMaterial(materialId, input, req.user.id, isStaffOrAdmin(req));
   reply.status(200).send(material);
 }
 
 export async function handleDeleteCourseMaterial(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { materialId } = req.params as { id: string; materialId: string };
-  await deleteCourseMaterial(materialId);
+  await deleteCourseMaterial(materialId, req.user.id, isStaffOrAdmin(req));
   reply.status(204).send();
+}
+
+export async function handleListMyInstructedCourses(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const items = await listMyInstructedCourses(req.user.id);
+  reply.status(200).send(items);
 }

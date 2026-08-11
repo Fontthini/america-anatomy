@@ -15,6 +15,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as EmbaixadoresRouteImport } from './routes/embaixadores'
 import { Route as MedicoRouteImport } from './routes/_medico'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -27,6 +28,7 @@ import { Route as AppFunilRouteImport } from './routes/_app.funil'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
+import { Route as AppGestaoEmbaixadoresIndexRouteImport } from './routes/_app.gestao-embaixadores.index'
 import { Route as AppGestaoCursosIndexRouteImport } from './routes/_app.gestao-cursos.index'
 import { Route as AppCatalogoIndexRouteImport } from './routes/_app.catalogo.index'
 import { Route as AppBlogIndexRouteImport } from './routes/_app.blog.index'
@@ -39,9 +41,11 @@ import { Route as AppCatalogoNovoRouteImport } from './routes/_app.catalogo.novo
 import { Route as AppCatalogoIdRouteImport } from './routes/_app.catalogo.$id'
 import { Route as AppBlogNovoRouteImport } from './routes/_app.blog.novo'
 import { Route as AppBlogIdRouteImport } from './routes/_app.blog.$id'
+import { Route as MedicoMedicoPainelInstrutorIndexRouteImport } from './routes/_medico.medico.painel-instrutor.index'
 import { Route as MedicoMedicoLojaIndexRouteImport } from './routes/_medico.medico.loja.index'
 import { Route as MedicoMedicoCursosIndexRouteImport } from './routes/_medico.medico.cursos.index'
 import { Route as MedicoMedicoBlogIndexRouteImport } from './routes/_medico.medico.blog.index'
+import { Route as MedicoMedicoPainelInstrutorIdRouteImport } from './routes/_medico.medico.painel-instrutor.$id'
 import { Route as MedicoMedicoCursosIdRouteImport } from './routes/_medico.medico.cursos.$id'
 import { Route as MedicoMedicoBlogIdRouteImport } from './routes/_medico.medico.blog.$id'
 
@@ -73,6 +77,11 @@ const LoginRoute = LoginRouteImport.update({
 const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   id: '/forgot-password',
   path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmbaixadoresRoute = EmbaixadoresRouteImport.update({
+  id: '/embaixadores',
+  path: '/embaixadores',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MedicoRoute = MedicoRouteImport.update({
@@ -133,6 +142,12 @@ const MedicoMedicoIndexRoute = MedicoMedicoIndexRouteImport.update({
   path: '/medico/',
   getParentRoute: () => MedicoRoute,
 } as any)
+const AppGestaoEmbaixadoresIndexRoute =
+  AppGestaoEmbaixadoresIndexRouteImport.update({
+    id: '/gestao-embaixadores/',
+    path: '/gestao-embaixadores/',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppGestaoCursosIndexRoute = AppGestaoCursosIndexRouteImport.update({
   id: '/gestao-cursos/',
   path: '/gestao-cursos/',
@@ -193,6 +208,12 @@ const AppBlogIdRoute = AppBlogIdRouteImport.update({
   path: '/blog/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const MedicoMedicoPainelInstrutorIndexRoute =
+  MedicoMedicoPainelInstrutorIndexRouteImport.update({
+    id: '/medico/painel-instrutor/',
+    path: '/medico/painel-instrutor/',
+    getParentRoute: () => MedicoRoute,
+  } as any)
 const MedicoMedicoLojaIndexRoute = MedicoMedicoLojaIndexRouteImport.update({
   id: '/medico/loja/',
   path: '/medico/loja/',
@@ -208,6 +229,12 @@ const MedicoMedicoBlogIndexRoute = MedicoMedicoBlogIndexRouteImport.update({
   path: '/medico/blog/',
   getParentRoute: () => MedicoRoute,
 } as any)
+const MedicoMedicoPainelInstrutorIdRoute =
+  MedicoMedicoPainelInstrutorIdRouteImport.update({
+    id: '/medico/painel-instrutor/$id',
+    path: '/medico/painel-instrutor/$id',
+    getParentRoute: () => MedicoRoute,
+  } as any)
 const MedicoMedicoCursosIdRoute = MedicoMedicoCursosIdRouteImport.update({
   id: '/medico/cursos/$id',
   path: '/medico/cursos/$id',
@@ -221,6 +248,7 @@ const MedicoMedicoBlogIdRoute = MedicoMedicoBlogIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/embaixadores': typeof EmbaixadoresRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -247,15 +275,19 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof AppBlogIndexRoute
   '/catalogo/': typeof AppCatalogoIndexRoute
   '/gestao-cursos/': typeof AppGestaoCursosIndexRoute
+  '/gestao-embaixadores/': typeof AppGestaoEmbaixadoresIndexRoute
   '/medico/': typeof MedicoMedicoIndexRoute
   '/medico/blog/$id': typeof MedicoMedicoBlogIdRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/medico/painel-instrutor/$id': typeof MedicoMedicoPainelInstrutorIdRoute
   '/medico/blog/': typeof MedicoMedicoBlogIndexRoute
   '/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
   '/medico/loja/': typeof MedicoMedicoLojaIndexRoute
+  '/medico/painel-instrutor/': typeof MedicoMedicoPainelInstrutorIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/embaixadores': typeof EmbaixadoresRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -282,18 +314,22 @@ export interface FileRoutesByTo {
   '/blog': typeof AppBlogIndexRoute
   '/catalogo': typeof AppCatalogoIndexRoute
   '/gestao-cursos': typeof AppGestaoCursosIndexRoute
+  '/gestao-embaixadores': typeof AppGestaoEmbaixadoresIndexRoute
   '/medico': typeof MedicoMedicoIndexRoute
   '/medico/blog/$id': typeof MedicoMedicoBlogIdRoute
   '/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/medico/painel-instrutor/$id': typeof MedicoMedicoPainelInstrutorIdRoute
   '/medico/blog': typeof MedicoMedicoBlogIndexRoute
   '/medico/cursos': typeof MedicoMedicoCursosIndexRoute
   '/medico/loja': typeof MedicoMedicoLojaIndexRoute
+  '/medico/painel-instrutor': typeof MedicoMedicoPainelInstrutorIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_medico': typeof MedicoRouteWithChildren
+  '/embaixadores': typeof EmbaixadoresRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -320,17 +356,21 @@ export interface FileRoutesById {
   '/_app/blog/': typeof AppBlogIndexRoute
   '/_app/catalogo/': typeof AppCatalogoIndexRoute
   '/_app/gestao-cursos/': typeof AppGestaoCursosIndexRoute
+  '/_app/gestao-embaixadores/': typeof AppGestaoEmbaixadoresIndexRoute
   '/_medico/medico/': typeof MedicoMedicoIndexRoute
   '/_medico/medico/blog/$id': typeof MedicoMedicoBlogIdRoute
   '/_medico/medico/cursos/$id': typeof MedicoMedicoCursosIdRoute
+  '/_medico/medico/painel-instrutor/$id': typeof MedicoMedicoPainelInstrutorIdRoute
   '/_medico/medico/blog/': typeof MedicoMedicoBlogIndexRoute
   '/_medico/medico/cursos/': typeof MedicoMedicoCursosIndexRoute
   '/_medico/medico/loja/': typeof MedicoMedicoLojaIndexRoute
+  '/_medico/medico/painel-instrutor/': typeof MedicoMedicoPainelInstrutorIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/embaixadores'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -357,15 +397,19 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/catalogo/'
     | '/gestao-cursos/'
+    | '/gestao-embaixadores/'
     | '/medico/'
     | '/medico/blog/$id'
     | '/medico/cursos/$id'
+    | '/medico/painel-instrutor/$id'
     | '/medico/blog/'
     | '/medico/cursos/'
     | '/medico/loja/'
+    | '/medico/painel-instrutor/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/embaixadores'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -392,17 +436,21 @@ export interface FileRouteTypes {
     | '/blog'
     | '/catalogo'
     | '/gestao-cursos'
+    | '/gestao-embaixadores'
     | '/medico'
     | '/medico/blog/$id'
     | '/medico/cursos/$id'
+    | '/medico/painel-instrutor/$id'
     | '/medico/blog'
     | '/medico/cursos'
     | '/medico/loja'
+    | '/medico/painel-instrutor'
   id:
     | '__root__'
     | '/'
     | '/_app'
     | '/_medico'
+    | '/embaixadores'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -429,18 +477,22 @@ export interface FileRouteTypes {
     | '/_app/blog/'
     | '/_app/catalogo/'
     | '/_app/gestao-cursos/'
+    | '/_app/gestao-embaixadores/'
     | '/_medico/medico/'
     | '/_medico/medico/blog/$id'
     | '/_medico/medico/cursos/$id'
+    | '/_medico/medico/painel-instrutor/$id'
     | '/_medico/medico/blog/'
     | '/_medico/medico/cursos/'
     | '/_medico/medico/loja/'
+    | '/_medico/medico/painel-instrutor/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   MedicoRoute: typeof MedicoRouteWithChildren
+  EmbaixadoresRoute: typeof EmbaixadoresRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
@@ -492,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/embaixadores': {
+      id: '/embaixadores'
+      path: '/embaixadores'
+      fullPath: '/embaixadores'
+      preLoaderRoute: typeof EmbaixadoresRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_medico': {
@@ -578,6 +637,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MedicoMedicoIndexRouteImport
       parentRoute: typeof MedicoRoute
     }
+    '/_app/gestao-embaixadores/': {
+      id: '/_app/gestao-embaixadores/'
+      path: '/gestao-embaixadores'
+      fullPath: '/gestao-embaixadores/'
+      preLoaderRoute: typeof AppGestaoEmbaixadoresIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/gestao-cursos/': {
       id: '/_app/gestao-cursos/'
       path: '/gestao-cursos'
@@ -662,6 +728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBlogIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_medico/medico/painel-instrutor/': {
+      id: '/_medico/medico/painel-instrutor/'
+      path: '/medico/painel-instrutor'
+      fullPath: '/medico/painel-instrutor/'
+      preLoaderRoute: typeof MedicoMedicoPainelInstrutorIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
     '/_medico/medico/loja/': {
       id: '/_medico/medico/loja/'
       path: '/medico/loja'
@@ -681,6 +754,13 @@ declare module '@tanstack/react-router' {
       path: '/medico/blog'
       fullPath: '/medico/blog/'
       preLoaderRoute: typeof MedicoMedicoBlogIndexRouteImport
+      parentRoute: typeof MedicoRoute
+    }
+    '/_medico/medico/painel-instrutor/$id': {
+      id: '/_medico/medico/painel-instrutor/$id'
+      path: '/medico/painel-instrutor/$id'
+      fullPath: '/medico/painel-instrutor/$id'
+      preLoaderRoute: typeof MedicoMedicoPainelInstrutorIdRouteImport
       parentRoute: typeof MedicoRoute
     }
     '/_medico/medico/cursos/$id': {
@@ -717,6 +797,7 @@ interface AppRouteChildren {
   AppBlogIndexRoute: typeof AppBlogIndexRoute
   AppCatalogoIndexRoute: typeof AppCatalogoIndexRoute
   AppGestaoCursosIndexRoute: typeof AppGestaoCursosIndexRoute
+  AppGestaoEmbaixadoresIndexRoute: typeof AppGestaoEmbaixadoresIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -736,6 +817,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBlogIndexRoute: AppBlogIndexRoute,
   AppCatalogoIndexRoute: AppCatalogoIndexRoute,
   AppGestaoCursosIndexRoute: AppGestaoCursosIndexRoute,
+  AppGestaoEmbaixadoresIndexRoute: AppGestaoEmbaixadoresIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -747,9 +829,11 @@ interface MedicoRouteChildren {
   MedicoMedicoIndexRoute: typeof MedicoMedicoIndexRoute
   MedicoMedicoBlogIdRoute: typeof MedicoMedicoBlogIdRoute
   MedicoMedicoCursosIdRoute: typeof MedicoMedicoCursosIdRoute
+  MedicoMedicoPainelInstrutorIdRoute: typeof MedicoMedicoPainelInstrutorIdRoute
   MedicoMedicoBlogIndexRoute: typeof MedicoMedicoBlogIndexRoute
   MedicoMedicoCursosIndexRoute: typeof MedicoMedicoCursosIndexRoute
   MedicoMedicoLojaIndexRoute: typeof MedicoMedicoLojaIndexRoute
+  MedicoMedicoPainelInstrutorIndexRoute: typeof MedicoMedicoPainelInstrutorIndexRoute
 }
 
 const MedicoRouteChildren: MedicoRouteChildren = {
@@ -759,9 +843,11 @@ const MedicoRouteChildren: MedicoRouteChildren = {
   MedicoMedicoIndexRoute: MedicoMedicoIndexRoute,
   MedicoMedicoBlogIdRoute: MedicoMedicoBlogIdRoute,
   MedicoMedicoCursosIdRoute: MedicoMedicoCursosIdRoute,
+  MedicoMedicoPainelInstrutorIdRoute: MedicoMedicoPainelInstrutorIdRoute,
   MedicoMedicoBlogIndexRoute: MedicoMedicoBlogIndexRoute,
   MedicoMedicoCursosIndexRoute: MedicoMedicoCursosIndexRoute,
   MedicoMedicoLojaIndexRoute: MedicoMedicoLojaIndexRoute,
+  MedicoMedicoPainelInstrutorIndexRoute: MedicoMedicoPainelInstrutorIndexRoute,
 }
 
 const MedicoRouteWithChildren =
@@ -771,6 +857,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   MedicoRoute: MedicoRouteWithChildren,
+  EmbaixadoresRoute: EmbaixadoresRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,

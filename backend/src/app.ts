@@ -14,6 +14,7 @@ import { referralsRoutes } from "./modules/referrals/referrals.routes.js";
 import { financeRoutes } from "./modules/finance/finance.routes.js";
 import { blogRoutes } from "./modules/blog/blog.routes.js";
 import { bannersRoutes } from "./modules/banners/banners.routes.js";
+import { ambassadorsRoutes } from "./modules/ambassadors/ambassadors.routes.js";
 
 export async function buildApp() {
   const isDev = process.env["NODE_ENV"] !== "production";
@@ -51,6 +52,7 @@ export async function buildApp() {
   await app.register(financeRoutes);
   await app.register(blogRoutes);
   await app.register(bannersRoutes);
+  await app.register(ambassadorsRoutes);
 
   return app;
 }

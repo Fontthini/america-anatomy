@@ -179,6 +179,18 @@ async function main() {
       sku: "AAI-TOR-01",
       stockQty: 8,
     },
+    {
+      slug: "escapepen-neurojoy",
+      title: "Escapepen NeuroJoy®",
+      description:
+        "O gatilho inalável que interrompe o caos e coloca você de volta no comando. 100% natural, sem " +
+        "nicotina, sem substâncias tóxicas e sem efeitos colaterais — alívio imediato de tensão, mais foco e " +
+        "suporte sensorial contra impulsos. Garantia incondicional de 7 dias.",
+      category: "Bem-estar",
+      price: 519,
+      sku: "AAI-ESCP-01",
+      stockQty: 100,
+    },
   ];
 
   for (const p of products) {
@@ -255,6 +267,14 @@ async function main() {
     });
   }
   console.log(`✅ ${events.length} cursos/seminários publicados`);
+
+  // Médico aprovado (medico@demo.com) também atua como instrutor do curso demo — permite testar o
+  // "Painel do Instrutor" sem precisar criar outro usuário.
+  await prisma.catalogItem.update({
+    where: { slug: "curso-anatomia-aplicada-cirurgia" },
+    data: { instructorUserId: approvedDoctor.id },
+  });
+  console.log(`✅ ${approvedDoctor.name} definido como instrutor do curso demo`);
 
   // Catálogo real de cursos — importado de americananatomyinstitute.com (Orlando + Madrid),
   // pra centralizar no sistema os cursos e parceiros que hoje só existem no site institucional.

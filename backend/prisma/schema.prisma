@@ -42,6 +42,7 @@ model User {
   assignedLeads       DoctorProfile[] @relation("AssignedSalesRep")
   auditLogs           AuditLog[]
   financialEntries    FinancialEntry[]
+  instructedCourses   CatalogItem[]    @relation("CourseInstructor")
 }
 
 enum ApprovalStatus {
@@ -212,11 +213,13 @@ model CatalogItem {
   category    String?
 
   // COURSE / SEMINAR apenas
-  startsAt DateTime?
-  endsAt   DateTime?
-  location String?
-  isOnline Boolean   @default(false)
-  capacity Int?
+  startsAt         DateTime?
+  endsAt           DateTime?
+  location         String?
+  isOnline         Boolean   @default(false)
+  capacity         Int?
+  // Médico parceiro que ministra o curso/seminário — dono do "Painel do Instrutor".
+  instructorUserId String?
 
   // PRODUCT apenas
   sku      String?
@@ -225,11 +228,13 @@ model CatalogItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  instructor           User?                @relation("CourseInstructor", fields: [instructorUserId], references: [id])
   orders               Order[]
   courseRegistrations  CourseRegistration[]
   materials            CourseMaterial[]
 
   @@index([type, status])
+  @@index([instructorUserId])
 }
 
 enum CourseMaterialType {
@@ -290,6 +295,32 @@ model Banner {
   updatedAt DateTime        @updatedAt
 
   @@index([placement, active])
+}
+
+enum AmbassadorApplicationStatus {
+  NEW
+  CONTACTED
+  APPROVED
+  REJECTED
+}
+
+/// Candidatura ao programa de Embaixadores AAI — formulário público, sem login, sem criar conta
+/// (mesmo padrão de CourseRegistration). Aprovação/gestão é feita pelo staff.
+model AmbassadorApplication {
+  id                String                       @id @default(cuid())
+  name              String
+  email             String
+  whatsapp          String
+  profileType       String
+  alreadyKnowsAai   Boolean
+  availableForLives Boolean
+  hasNetwork        Boolean
+  notes             String?
+  status            AmbassadorApplicationStatus  @default(NEW)
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  @@index([status])
 }
 
 enum CourseRegistrationStatus {

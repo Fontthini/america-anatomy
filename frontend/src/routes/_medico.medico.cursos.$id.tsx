@@ -86,8 +86,6 @@ function CourseItemPage() {
     );
   }
 
-  const soldOut = item.vagasRestantes !== null && item.vagasRestantes <= 0;
-
   return (
     <PageContainer className="max-w-3xl">
       <Link to="/medico/cursos" className="inline-flex items-center gap-1.5 text-sm text-fg-muted hover:text-fg">
@@ -96,14 +94,7 @@ function CourseItemPage() {
 
       <Card>
         <CardBody className="space-y-5">
-          <div className="flex items-start justify-between gap-2">
-            <Badge tone="accent">{typeLabels[item.type]}</Badge>
-            {item.vagasRestantes !== null && (
-              <Badge tone={soldOut ? "danger" : "neutral"}>
-                {soldOut ? "Esgotado" : `${item.vagasRestantes} vagas restantes`}
-              </Badge>
-            )}
-          </div>
+          <Badge tone="accent">{typeLabels[item.type]}</Badge>
 
           <div>
             <h1 className="font-display text-3xl text-fg">{item.title}</h1>
@@ -125,7 +116,7 @@ function CourseItemPage() {
 
           <div className="flex items-center justify-between border-t border-line pt-5">
             <span className="font-display text-2xl text-fg">{formatPrice(item.price)}</span>
-            <Button onClick={() => orderMutation.mutate()} loading={orderMutation.isPending} disabled={soldOut}>
+            <Button onClick={() => orderMutation.mutate()} loading={orderMutation.isPending}>
               Inscrever-se
             </Button>
           </div>

@@ -24,6 +24,8 @@ export type CatalogItemResponse = {
   isOnline: boolean;
   capacity: number | null;
   vagasRestantes: number | null;
+  instructorUserId: string | null;
+  instructorName: string | null;
   sku: string | null;
   stockQty: number | null;
   createdAt: string;
@@ -69,6 +71,7 @@ export type CreateCatalogItemPayload =
       location?: string;
       isOnline?: boolean;
       capacity?: number;
+      instructorUserId?: string;
     };
 
 /** POST /api/catalog — staff/admin */
@@ -228,7 +231,16 @@ export async function apiUpdateCourseMaterial(
   });
 }
 
-/** DELETE /api/catalog/:id/materials/:materialId — staff/admin */
+/** DELETE /api/catalog/:id/materials/:materialId — instrutor do curso ou staff/admin */
 export async function apiDeleteCourseMaterial(catalogItemId: string, materialId: string): Promise<void> {
   await apiFetch<void>(`/api/catalog/${catalogItemId}/materials/${materialId}`, { method: "DELETE" });
+}
+
+// ---------------------------------------------------------------------------
+// Painel do Instrutor — cursos onde o médico logado é o instrutor responsável
+// ---------------------------------------------------------------------------
+
+/** GET /api/catalog/instructor/mine */
+export async function apiListMyInstructedCourses(): Promise<CatalogItemResponse[]> {
+  return apiFetch<CatalogItemResponse[]>("/api/catalog/instructor/mine");
 }
