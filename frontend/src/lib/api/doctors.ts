@@ -6,7 +6,7 @@
 import { apiFetch, setToken } from "./client";
 import type { MockUser } from "../mock/users";
 
-export type ApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
+export type ApprovalStatus = "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
 
 export type DoctorProfileResponse = {
   id: string;

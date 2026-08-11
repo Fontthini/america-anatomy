@@ -1,306 +1,223 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
-  Inbox,
-  MoreHorizontal,
-  ArrowUp,
-  ArrowDown,
+  KanbanSquare,
+  Share2,
+  Wallet,
+  Package,
+  GraduationCap,
+  UserCheck,
+  TrendingUp,
+  TrendingDown,
+  Stethoscope,
+  ArrowRight,
 } from "lucide-react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import { Card, CardBody, CardHeader } from "../components/ui/Card";
-import { Skeleton } from "../components/ui/Skeleton";
-import { Badge } from "../components/ui/Badge";
-import { Dropdown, DropdownItem } from "../components/ui/Dropdown";
-import { Button } from "../components/ui/Button";
-import { kpis } from "../lib/mock/kpis";
-import { chartData } from "../lib/mock/chart";
-import { tableRows, type Row, type Status } from "../lib/mock/table";
-import { mockDelay } from "../lib/mock";
-import { cn } from "../lib/cn";
-import { useThemeColors } from "../lib/useThemeColors";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
+import { Card, CardBody } from "../components/ui/Card";
+import { Badge } from "../components/ui/Badge";
+import { useAuth } from "../contexts/AuthContext";
+import { apiListLeads } from "../lib/api/crm";
+import { apiListReferrals } from "../lib/api/referrals";
+import { apiGetFinancialSummary } from "../lib/api/finance";
+import { apiListCatalogItems } from "../lib/api/catalog";
+import { apiListDoctors } from "../lib/api/doctors";
 
 export const Route = createFileRoute("/_app/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Base" }] }),
+  head: () => ({ meta: [{ title: "Portal — America Anatomy" }] }),
   component: DashboardPage,
 });
 
-const statusTone: Record<Status, "accent" | "warn" | "danger" | "muted"> = {
-  ativo: "accent",
-  pendente: "warn",
-  cancelado: "danger",
-  rascunho: "muted",
-};
-
-function formatBRL(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function formatBRL(value: string) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value));
 }
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+
+function StatCard({
+  label,
+  value,
+  sublabel,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  sublabel?: string;
+  icon: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardBody className="flex items-center gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent-soft text-accent">
+          {icon}
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">{label}</p>
+          <p className="font-display text-xl text-fg">{value}</p>
+          {sublabel && <p className="truncate text-xs text-fg-muted">{sublabel}</p>}
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function QuickLink({ to, label, icon }: { to: string; label: string; icon: React.ReactNode }) {
+  return (
+    <Link to={to}>
+      <Card className="group h-full transition-colors hover:border-line-strong">
+        <CardBody className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent">
+              {icon}
+            </span>
+            <p className="text-sm font-medium text-fg">{label}</p>
+          </div>
+          <ArrowRight size={14} className="text-fg-muted transition-transform group-hover:translate-x-0.5" />
+        </CardBody>
+      </Card>
+    </Link>
+  );
 }
 
 function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [sortKey, setSortKey] = useState<"client" | "status" | "amount" | "date">("date");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-  const pageSize = 8;
-  const c = useThemeColors();
+  const { user } = useAuth();
+  const isManager = user?.role === "MANAGER" || user?.role === "ADMIN";
+  const isSalesRep = user?.role === "SALES_REP";
+  const canSeeCrm = isManager || isSalesRep;
 
-  useEffect(() => {
-    let alive = true;
-    mockDelay(550).then(() => { if (alive) setLoading(false); });
-    return () => { alive = false; };
-  }, []);
+  const { data: leads = [] } = useQuery({
+    queryKey: ["leads", isSalesRep ? "mine" : "all"],
+    queryFn: () => apiListLeads({ scope: isSalesRep ? "mine" : "all" }),
+    enabled: canSeeCrm,
+  });
 
-  const sorted = useMemo(() => {
-    const arr = [...tableRows];
-    arr.sort((a, b) => {
-      const va = a[sortKey];
-      const vb = b[sortKey];
-      if (va < vb) return sortDir === "asc" ? -1 : 1;
-      if (va > vb) return sortDir === "asc" ? 1 : -1;
-      return 0;
-    });
-    return arr;
-  }, [sortKey, sortDir]);
-  const pages = Math.ceil(sorted.length / pageSize);
-  const slice: Row[] = useMemo(
-    () => sorted.slice((page - 1) * pageSize, page * pageSize),
-    [page, sorted],
-  );
+  const { data: referrals = [] } = useQuery({
+    queryKey: ["referrals", "dashboard"],
+    queryFn: () => apiListReferrals(),
+    enabled: canSeeCrm,
+  });
 
-  function toggleSort(k: typeof sortKey) {
-    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else { setSortKey(k); setSortDir("asc"); }
-  }
+  const { data: finance } = useQuery({
+    queryKey: ["financeSummary"],
+    queryFn: apiGetFinancialSummary,
+    enabled: isManager,
+  });
 
-  function SortTh({ k, label, align = "left" }: { k: typeof sortKey; label: string; align?: "left" | "right" }) {
-    const active = sortKey === k;
-    return (
-      <th className={cn("px-5 py-3 font-medium", align === "right" && "text-right")}>
-        <button
-          type="button"
-          onClick={() => toggleSort(k)}
-          className={cn(
-            "inline-flex items-center gap-1 transition-colors hover:text-fg",
-            active && "text-fg",
-          )}
-        >
-          {label}
-          {active ? (
-            sortDir === "asc" ? <ArrowUp size={11} strokeWidth={1.5} /> : <ArrowDown size={11} strokeWidth={1.5} />
-          ) : null}
-        </button>
-      </th>
-    );
-  }
+  const { data: catalog = [] } = useQuery({
+    queryKey: ["catalog", "dashboard"],
+    queryFn: () => apiListCatalogItems(),
+  });
+
+  const { data: pendingDoctors = [] } = useQuery({
+    queryKey: ["doctors", "PENDING"],
+    queryFn: () => apiListDoctors("PENDING"),
+    enabled: isManager,
+  });
+  const { data: inReviewDoctors = [] } = useQuery({
+    queryKey: ["doctors", "IN_REVIEW"],
+    queryFn: () => apiListDoctors("IN_REVIEW"),
+    enabled: isManager,
+  });
+  const { data: approvedDoctors = [] } = useQuery({
+    queryKey: ["doctors", "APPROVED"],
+    queryFn: () => apiListDoctors("APPROVED"),
+    enabled: isManager,
+  });
+
+  const customerLeads = leads.filter((l) => l.funnelStage === "CUSTOMER").length;
+  const pendingCommission = referrals.filter((r) => !r.commissionPaid).length;
+  const publishedProducts = catalog.filter((c) => c.status === "PUBLISHED" && c.type === "PRODUCT").length;
+  const publishedCourses = catalog.filter(
+    (c) => c.status === "PUBLISHED" && (c.type === "COURSE" || c.type === "SEMINAR"),
+  ).length;
 
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Visão geral"
-        title="Dashboard"
-        description="Métricas mockadas para você visualizar o boilerplate. Dados ficam em src/lib/mock."
+        eyebrow="Portal"
+        title={`Olá, ${user?.name?.split(" ")[0] ?? ""}`}
+        description="Resumo do negócio America Anatomy Institute."
       />
 
-      {/* KPIs */}
-      <section className="stagger-children grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {kpis.map((k) => {
-          const positive = k.delta >= 0;
-          return (
-            <Card key={k.label}>
-              <CardBody className="space-y-4">
-                <p className="text-xs uppercase tracking-wide text-fg-muted">{k.label}</p>
-                {loading ? (
-                  <Skeleton className="h-10 w-32" />
-                ) : (
-                  <p className="tnum font-display text-4xl text-fg">{k.value}</p>
-                )}
-                <div className="flex items-center justify-between text-xs">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1",
-                      positive ? "text-accent" : "text-fg-muted",
-                    )}
-                  >
-                    {positive ? (
-                      <ArrowUpRight size={12} strokeWidth={1.5} />
-                    ) : (
-                      <ArrowDownRight size={12} strokeWidth={1.5} />
-                    )}
-                    {positive ? "+" : ""}
-                    {k.delta}%
-                  </span>
-                  <span className="text-fg-muted">{k.hint}</span>
-                </div>
-              </CardBody>
-            </Card>
-          );
-        })}
-      </section>
-
-      {/* Chart */}
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-fg">Receita mensal</h2>
-            <p className="text-xs text-fg-muted">Últimos 12 meses · mockado</p>
+      {!canSeeCrm ? (
+        <p className="text-sm text-fg-muted">Sem dados de CRM pra exibir aqui ainda.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {isManager && (
+              <StatCard
+                label="Aguardando decisão"
+                value={pendingDoctors.length + inReviewDoctors.length}
+                sublabel={inReviewDoctors.length > 0 ? `${inReviewDoctors.length} em análise` : "Novos cadastros"}
+                icon={<UserCheck size={18} />}
+              />
+            )}
+            {isManager && (
+              <StatCard label="Médicos aprovados" value={approvedDoctors.length} icon={<Stethoscope size={18} />} />
+            )}
+            <StatCard
+              label={isSalesRep ? "Meus leads" : "Leads no funil"}
+              value={leads.length}
+              sublabel={`${customerLeads} viraram cliente`}
+              icon={<KanbanSquare size={18} />}
+            />
+            <StatCard
+              label="Indicações"
+              value={referrals.length}
+              sublabel={pendingCommission > 0 ? `${pendingCommission} sem comissão lançada` : undefined}
+              icon={<Share2 size={18} />}
+            />
+            {isManager && finance && (
+              <StatCard
+                label="Saldo financeiro"
+                value={formatBRL(finance.balance)}
+                sublabel={`${formatBRL(finance.totalIncome)} entradas`}
+                icon={
+                  Number(finance.balance) >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />
+                }
+              />
+            )}
+            <StatCard
+              label="Catálogo publicado"
+              value={publishedProducts + publishedCourses}
+              sublabel={`${publishedProducts} produtos · ${publishedCourses} cursos`}
+              icon={<Package size={18} />}
+            />
           </div>
-          <Badge tone="muted">2025</Badge>
-        </CardHeader>
-        <CardBody>
-          {loading ? (
-            <Skeleton className="h-[280px] w-full" />
-          ) : (
-            <div className="h-[280px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid stroke={c.line} vertical={false} />
-                  <XAxis
-                    dataKey="month"
-                    stroke={c.muted}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke={c.muted}
-                    fontSize={11}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ stroke: c.line, strokeWidth: 1 }}
-                    contentStyle={{
-                      background: c.surface,
-                      border: `1px solid ${c.line}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: c.fg,
-                    }}
-                    labelStyle={{ color: c.muted }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    stroke={c.accent}
-                    strokeWidth={1.5}
-                    dot={false}
-                    activeDot={{ r: 3, fill: c.accent, stroke: c.bg }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardBody>
-      </Card>
 
-      {/* Table */}
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-medium text-fg">Faturas recentes</h2>
-            <p className="text-xs text-fg-muted">25 registros · mockados</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <QuickLink to="/funil" label="Funil" icon={<KanbanSquare size={16} />} />
+            <QuickLink to="/indicacoes" label="Indicações" icon={<Share2 size={16} />} />
+            {isManager && <QuickLink to="/financeiro" label="Financeiro" icon={<Wallet size={16} />} />}
+            {isManager && <QuickLink to="/catalogo" label="Catálogo" icon={<Package size={16} />} />}
+            {isManager && <QuickLink to="/gestao-cursos" label="Gestão de Cursos" icon={<GraduationCap size={16} />} />}
+            {isManager && (
+              <QuickLink to="/medicos-pendentes" label="Médicos Pendentes" icon={<UserCheck size={16} />} />
+            )}
           </div>
-          <Button size="sm" variant="secondary">Exportar</Button>
-        </CardHeader>
 
-        {loading ? (
-          <div className="space-y-2 p-5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-10 w-full" />
-            ))}
-          </div>
-        ) : tableRows.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <Inbox size={28} strokeWidth={1.25} className="text-fg-muted" />
+          {isManager && (pendingDoctors.length > 0 || inReviewDoctors.length > 0) && (
             <div>
-              <p className="text-sm text-fg">Nenhuma fatura ainda</p>
-              <p className="text-xs text-fg-muted">Quando houver dados, eles aparecem aqui.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 z-10 bg-surface-1">
-                <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-fg-muted">
-                  <SortTh k="client" label="Cliente" />
-                  <SortTh k="status" label="Status" />
-                  <SortTh k="amount" label="Valor" />
-                  <SortTh k="date" label="Data" />
-                  <th className="px-5 py-3 font-medium" />
-                </tr>
-              </thead>
-              <tbody>
-                {slice.map((row) => (
-                  <tr
-                    key={row.id}
-                    className="border-b border-line transition-colors duration-150 hover:bg-surface-2 focus-within:bg-surface-2"
-                  >
-                    <td className="px-5 py-3.5">
-                      <p className="text-fg">{row.client}</p>
-                      <p className="text-xs text-fg-muted">{row.email}</p>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <Badge tone={statusTone[row.status]}>{row.status}</Badge>
-                    </td>
-                    <td className="px-5 py-3.5 tnum font-mono text-fg">{formatBRL(row.amount)}</td>
-                    <td className="px-5 py-3.5 text-fg-muted">{formatDate(row.date)}</td>
-                    <td className="px-5 py-3.5 text-right">
-                      <Dropdown
-                        trigger={
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-md text-fg-muted hover:bg-surface-3 hover:text-fg">
-                            <MoreHorizontal size={16} />
-                          </span>
-                        }
-                      >
-                        <DropdownItem>Ver detalhes</DropdownItem>
-                        <DropdownItem>Duplicar</DropdownItem>
-                        <DropdownItem danger>Excluir</DropdownItem>
-                      </Dropdown>
-                    </td>
-                  </tr>
+              <h2 className="mb-3 text-sm font-medium text-fg">Precisa da sua decisão</h2>
+              <div className="space-y-2">
+                {[...inReviewDoctors, ...pendingDoctors].slice(0, 5).map((doctor) => (
+                  <Link key={doctor.id} to="/medicos-pendentes">
+                    <Card className="transition-colors hover:border-line-strong">
+                      <CardBody className="flex items-center justify-between gap-4">
+                        <div>
+                          <p className="text-sm text-fg">{doctor.name}</p>
+                          <p className="text-xs text-fg-muted">{doctor.email}</p>
+                        </div>
+                        <Badge tone={doctor.approvalStatus === "IN_REVIEW" ? "warn" : "muted"}>
+                          {doctor.approvalStatus === "IN_REVIEW" ? "Revisão solicitada" : "Pendente"}
+                        </Badge>
+                      </CardBody>
+                    </Card>
+                  </Link>
                 ))}
-              </tbody>
-            </table>
-
-            <div className="flex items-center justify-between px-5 py-3 text-xs text-fg-muted">
-              <span>
-                Página <span className="text-fg">{page}</span> de {pages}
-              </span>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Anterior
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                  disabled={page === pages}
-                >
-                  Próxima
-                </Button>
               </div>
             </div>
-          </div>
-        )}
-      </Card>
+          )}
+        </>
+      )}
     </PageContainer>
   );
 }

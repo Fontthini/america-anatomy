@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_app/medicos-pendentes")({
 
 const tabs: { value: ApprovalStatus; label: string }[] = [
   { value: "PENDING", label: "Pendentes" },
+  { value: "IN_REVIEW", label: "Em Análise" },
   { value: "APPROVED", label: "Aprovados" },
   { value: "REJECTED", label: "Rejeitados" },
 ];
@@ -106,8 +107,9 @@ function PendingDoctorsPage() {
                       </p>
                     </div>
                   </div>
-                  {status === "PENDING" && (
+                  {(status === "PENDING" || status === "IN_REVIEW") && (
                     <div className="flex shrink-0 items-center gap-2">
+                      {status === "IN_REVIEW" && <Badge tone="warn">Revisão solicitada</Badge>}
                       <Button
                         size="sm"
                         variant="secondary"
