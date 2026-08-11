@@ -70,6 +70,7 @@ export function CatalogItemForm({
       onSubmit({
         type,
         ...base,
+        category: category || undefined,
         startsAt: new Date(startsAt).toISOString(),
         endsAt: endsAt ? new Date(endsAt).toISOString() : undefined,
         location: location || undefined,
@@ -144,6 +145,10 @@ export function CatalogItemForm({
             </div>
           ) : (
             <>
+              <div className="space-y-1.5">
+                <Label htmlFor="category">Categoria (opcional)</Label>
+                <Input id="category" placeholder="Ex.: Corporal, Facial" value={category} onChange={(e) => setCategory(e.target.value)} />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="startsAt">Início</Label>

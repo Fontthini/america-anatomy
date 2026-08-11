@@ -10,6 +10,7 @@ import { useToast } from "../contexts/ToastContext";
 import { cn } from "../lib/cn";
 import { apiListCatalogItems, type CatalogItemResponse } from "../lib/api/catalog";
 import { apiCreateOrder } from "../lib/api/orders";
+import { BannerCarousel } from "../components/medico/BannerCarousel";
 
 export const Route = createFileRoute("/_medico/medico/loja/")({
   component: LojaPage,
@@ -279,7 +280,7 @@ function LojaPage() {
 
   return (
     <PageContainer className="max-w-none">
-      <Banner />
+      <BannerCarousel placement="LOJA" fallback={<Banner />} />
 
       <div className="flex items-center justify-between gap-4">
         <div className="relative max-w-md flex-1">

@@ -227,8 +227,69 @@ model CatalogItem {
 
   orders               Order[]
   courseRegistrations  CourseRegistration[]
+  materials            CourseMaterial[]
 
   @@index([type, status])
+}
+
+enum CourseMaterialType {
+  VIDEO
+  PDF
+  LINK
+}
+
+/// Vídeos/materiais liberados dentro do curso, visíveis só pra quem já se inscreveu (Order confirmado) ou staff.
+model CourseMaterial {
+  id            String             @id @default(cuid())
+  catalogItemId String
+  title         String
+  type          CourseMaterialType
+  url           String
+  order         Int                @default(0)
+  createdAt     DateTime           @default(now())
+
+  catalogItem CatalogItem @relation(fields: [catalogItemId], references: [id], onDelete: Cascade)
+
+  @@index([catalogItemId])
+}
+
+/// Artigo científico / post de blog da área do médico — mesma ideia do peptideo (conteúdo em texto simples,
+/// vídeo opcional via YouTube, materiais pra download), sem rota pública própria.
+model Article {
+  id            String    @id @default(cuid())
+  title         String
+  content       String
+  coverImageUrl String?
+  videoUrl      String?
+  category      String?
+  materials     Json      @default("[]")
+  published     Boolean   @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([published])
+  @@index([category])
+}
+
+enum BannerPlacement {
+  LOJA
+  BLOG
+}
+
+/// Banner do carrossel — Loja e Blog têm pools independentes (placement), igual ao peptideo.
+model Banner {
+  id        String          @id @default(cuid())
+  placement BannerPlacement
+  imageUrl  String
+  title     String?
+  subtitle  String?
+  active    Boolean         @default(true)
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([placement, active])
 }
 
 enum CourseRegistrationStatus {

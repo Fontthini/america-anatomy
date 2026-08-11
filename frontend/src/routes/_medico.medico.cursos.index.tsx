@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { MapPin, Calendar, ArrowRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { MapPin, Calendar, ArrowRight, Search } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -32,20 +32,59 @@ function formatDate(iso: string | null): string | null {
 
 function CoursesPage() {
   const [filter, setFilter] = useState<CatalogItemType | "ALL">("ALL");
+  const [location, setLocation] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: items = [], isLoading } = useQuery({
     queryKey: ["catalog"],
     queryFn: () => apiListCatalogItems(),
   });
 
-  const events = items.filter((i) => i.type === "COURSE" || i.type === "SEMINAR");
-  const filtered = filter === "ALL" ? events : events.filter((i) => i.type === filter);
+  const events = useMemo(
+    () => items.filter((i) => i.type === "COURSE" || i.type === "SEMINAR"),
+    [items],
+  );
+
+  const locations = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          events
+            .filter((e) => !e.isOnline && e.location)
+            .map((e) => e.location as string),
+        ),
+      ).sort(),
+    [events],
+  );
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return events
+      .filter((i) => (filter === "ALL" ? true : i.type === filter))
+      .filter((i) => (location ? i.location === location : true))
+      .filter((i) => (term ? i.title.toLowerCase().includes(term) || (i.description ?? "").toLowerCase().includes(term) : true))
+      .sort((a, b) => {
+        if (!a.startsAt) return 1;
+        if (!b.startsAt) return -1;
+        return new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
+      });
+  }, [events, filter, location, search]);
 
   return (
     <PageContainer>
       <PageHeader eyebrow="Área do médico" title="Cursos" description="Cursos e seminários da America Anatomy Institute." />
 
-      <div className="flex gap-2">
+      <div className="relative max-w-md">
+        <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Buscar curso ou seminário…"
+          className="h-10 w-full rounded-lg border border-line bg-surface-1 pl-9 pr-3 text-sm text-fg placeholder:text-fg-muted/70 focus:border-accent/60 focus:outline-none"
+        />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
             key={f.value}
@@ -60,6 +99,36 @@ function CoursesPage() {
             {f.label}
           </button>
         ))}
+        {locations.length > 1 && (
+          <>
+            <span className="mx-1 self-center text-line">|</span>
+            <button
+              onClick={() => setLocation(null)}
+              className={cn(
+                "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                !location
+                  ? "border-accent/40 bg-accent-soft text-accent"
+                  : "border-line text-fg-muted hover:border-line-strong hover:text-fg",
+              )}
+            >
+              Todos os locais
+            </button>
+            {locations.map((loc) => (
+              <button
+                key={loc}
+                onClick={() => setLocation(loc)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  location === loc
+                    ? "border-accent/40 bg-accent-soft text-accent"
+                    : "border-line text-fg-muted hover:border-line-strong hover:text-fg",
+                )}
+              >
+                {loc}
+              </button>
+            ))}
+          </>
+        )}
       </div>
 
       {isLoading ? (
@@ -73,7 +142,10 @@ function CoursesPage() {
               <Card className="group flex h-full flex-col transition-colors hover:border-line-strong">
                 <CardBody className="flex flex-1 flex-col gap-3">
                   <div className="flex items-start justify-between gap-2">
-                    <Badge tone="accent">{typeLabels[item.type]}</Badge>
+                    <div className="flex flex-wrap gap-1.5">
+                      <Badge tone="accent">{typeLabels[item.type]}</Badge>
+                      {item.category && <Badge tone="muted">{item.category}</Badge>}
+                    </div>
                     {item.vagasRestantes !== null && (
                       <Badge tone={item.vagasRestantes > 0 ? "neutral" : "danger"}>
                         {item.vagasRestantes > 0 ? `${item.vagasRestantes} vagas` : "Esgotado"}

@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, Newspaper, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
 import { cn } from "../../lib/cn";
@@ -10,6 +10,7 @@ const items: Item[] = [
   { to: "/medico", label: "Início", icon: LayoutDashboard },
   { to: "/medico/loja", label: "Loja", icon: ShoppingCart },
   { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
+  { to: "/medico/blog", label: "Blog", icon: Newspaper },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
   { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];

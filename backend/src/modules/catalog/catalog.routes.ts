@@ -13,6 +13,10 @@ import {
   handleListCourseRegistrations,
   handleUpdateRegistrationStatus,
   handleListEnrolledDoctors,
+  handleListCourseMaterials,
+  handleCreateCourseMaterial,
+  handleUpdateCourseMaterial,
+  handleDeleteCourseMaterial,
 } from "./catalog.controller.js";
 
 export async function catalogRoutes(app: FastifyInstance): Promise<void> {
@@ -52,4 +56,26 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
     handleUpdateRegistrationStatus,
   );
   app.get("/api/catalog/:id/orders", { preHandler: [authenticate, staffOnly] }, handleListEnrolledDoctors);
+
+  // Materiais do curso (vídeos/PDFs/links) — médico só vê se estiver inscrito; staff sempre.
+  app.get(
+    "/api/catalog/:id/materials",
+    { preHandler: [authenticate, requireApproved] },
+    handleListCourseMaterials,
+  );
+  app.post(
+    "/api/catalog/:id/materials",
+    { preHandler: [authenticate, staffOnly] },
+    handleCreateCourseMaterial,
+  );
+  app.patch(
+    "/api/catalog/:id/materials/:materialId",
+    { preHandler: [authenticate, staffOnly] },
+    handleUpdateCourseMaterial,
+  );
+  app.delete(
+    "/api/catalog/:id/materials/:materialId",
+    { preHandler: [authenticate, staffOnly] },
+    handleDeleteCourseMaterial,
+  );
 }

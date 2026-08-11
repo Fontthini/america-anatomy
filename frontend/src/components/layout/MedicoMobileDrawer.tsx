@@ -1,12 +1,13 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, X } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, Newspaper, X } from "lucide-react";
 import { cn } from "../../lib/cn";
 
 const items = [
   { to: "/medico", label: "Início", icon: LayoutDashboard },
   { to: "/medico/loja", label: "Loja", icon: ShoppingCart },
   { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
+  { to: "/medico/blog", label: "Blog", icon: Newspaper },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
   { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];

@@ -131,3 +131,34 @@ export type EnrolledDoctorResponse = {
   phone: string | null;
   createdAt: string;
 };
+
+// ---------------------------------------------------------------------------
+// Materiais do curso (vídeos/PDFs/links) — liberados só pra quem se inscreveu
+// ---------------------------------------------------------------------------
+
+export const createCourseMaterialSchema = z.object({
+  title: z.string().min(2, "Título deve ter ao menos 2 caracteres.").max(150),
+  type: z.enum(["VIDEO", "PDF", "LINK"]),
+  url: z.string().url("URL inválida."),
+  order: z.number().int().default(0),
+});
+
+export const updateCourseMaterialSchema = z.object({
+  title: z.string().min(2).max(150).optional(),
+  type: z.enum(["VIDEO", "PDF", "LINK"]).optional(),
+  url: z.string().url().optional(),
+  order: z.number().int().optional(),
+});
+
+export type CreateCourseMaterialInput = z.infer<typeof createCourseMaterialSchema>;
+export type UpdateCourseMaterialInput = z.infer<typeof updateCourseMaterialSchema>;
+
+export type CourseMaterialResponse = {
+  id: string;
+  catalogItemId: string;
+  title: string;
+  type: "VIDEO" | "PDF" | "LINK";
+  url: string;
+  order: number;
+  createdAt: string;
+};

@@ -10,8 +10,11 @@ import type {
   CourseRegistrationResponse,
   PublicCatalogItemResponse,
   EnrolledDoctorResponse,
+  CreateCourseMaterialInput,
+  UpdateCourseMaterialInput,
+  CourseMaterialResponse,
 } from "./catalog.schemas.js";
-import type { CatalogItem, CourseRegistration, CourseRegistrationStatus } from "@prisma/client";
+import type { CatalogItem, CourseRegistration, CourseRegistrationStatus, CourseMaterial } from "@prisma/client";
 
 function slugify(title: string): string {
   return title
@@ -238,4 +241,79 @@ export async function listEnrolledDoctors(catalogItemId: string): Promise<Enroll
     phone: order.doctorProfile.phone,
     createdAt: order.createdAt.toISOString(),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Materiais do curso (vídeos/PDFs/links) — só pra quem se inscreveu, ou staff
+// ---------------------------------------------------------------------------
+
+function toCourseMaterialResponse(material: CourseMaterial): CourseMaterialResponse {
+  return {
+    id: material.id,
+    catalogItemId: material.catalogItemId,
+    title: material.title,
+    type: material.type,
+    url: material.url,
+    order: material.order,
+    createdAt: material.createdAt.toISOString(),
+  };
+}
+
+async function isDoctorEnrolled(userId: string, catalogItemId: string): Promise<boolean> {
+  const order = await prisma.order.findFirst({
+    where: { catalogItemId, status: "CONFIRMED", doctorProfile: { userId } },
+    select: { id: true },
+  });
+  return order !== null;
+}
+
+/** Médico só vê os materiais se estiver inscrito (Order confirmado) no curso; staff/admin sempre vê. */
+export async function listCourseMaterials(
+  catalogItemId: string,
+  userId: string,
+  isStaffOrAdmin: boolean,
+): Promise<CourseMaterialResponse[]> {
+  if (!isStaffOrAdmin) {
+    const enrolled = await isDoctorEnrolled(userId, catalogItemId);
+    if (!enrolled) {
+      throw new AppError(403, "ENROLLMENT_REQUIRED", "Inscreva-se neste curso para acessar os materiais.");
+    }
+  }
+  const materials = await prisma.courseMaterial.findMany({
+    where: { catalogItemId },
+    orderBy: { order: "asc" },
+  });
+  return materials.map(toCourseMaterialResponse);
+}
+
+export async function createCourseMaterial(
+  catalogItemId: string,
+  input: CreateCourseMaterialInput,
+): Promise<CourseMaterialResponse> {
+  const item = await prisma.catalogItem.findUnique({ where: { id: catalogItemId } });
+  if (!item) {
+    throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Item de catálogo não encontrado.");
+  }
+  const material = await prisma.courseMaterial.create({ data: { catalogItemId, ...input } });
+  return toCourseMaterialResponse(material);
+}
+
+export async function updateCourseMaterial(
+  materialId: string,
+  input: UpdateCourseMaterialInput,
+): Promise<CourseMaterialResponse> {
+  const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
+  if (!existing) {
+    throw new AppError(404, "COURSE_MATERIAL_NOT_FOUND", "Material não encontrado.");
+  }
+  const material = await prisma.courseMaterial.update({ where: { id: materialId }, data: input });
+  return toCourseMaterialResponse(material);
+}
+
+export async function deleteCourseMaterial(materialId: string): Promise<void> {
+  const existing = await prisma.courseMaterial.findUnique({ where: { id: materialId } });
+  if (!existing) {
+    throw new AppError(404, "COURSE_MATERIAL_NOT_FOUND", "Material não encontrado.");
+  }
+  await prisma.courseMaterial.delete({ where: { id: materialId } });
 }

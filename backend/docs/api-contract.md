@@ -81,6 +81,10 @@ Todos os erros seguem este shape:
 | `COMMISSION_ALREADY_PAID` | 409 | Comissão desta indicação já foi lançada (lançamento é único) |
 | `FINANCIAL_ENTRY_NOT_FOUND` | 404 | Lançamento financeiro inexistente |
 | `COURSE_REGISTRATION_NOT_FOUND` | 404 | Inscrição de interesse (formulário público) inexistente |
+| `ENROLLMENT_REQUIRED` | 403 | Médico tentou ver materiais de um curso sem `Order` confirmado nele |
+| `COURSE_MATERIAL_NOT_FOUND` | 404 | Material de curso inexistente |
+| `ARTICLE_NOT_FOUND` | 404 | Artigo inexistente, ou não publicado para quem não é staff/admin |
+| `BANNER_NOT_FOUND` | 404 | Banner inexistente |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -890,6 +894,60 @@ Roster de médicos que **já têm conta** e se inscreveram de verdade (via `Orde
 ```typescript
 { orderId: string; doctorProfileId: string; name: string; email: string; crm: string | null; phone: string | null; createdAt: string; }[]
 ```
+
+---
+
+## Materiais do curso (`/api/catalog/:id/materials`)
+
+Vídeos/PDFs/links liberados dentro de um curso — o médico só enxerga depois de se inscrever (mesma regra que gera o `Order` confirmado usado no roster acima).
+
+### `GET /api/catalog/:id/materials`
+**Auth:** autenticado + aprovado. Staff (`MANAGER`/`ADMIN`) sempre vê; médico só vê se tiver `Order` `CONFIRMED` nesse item — senão `403 ENROLLMENT_REQUIRED`.
+
+**Response `200`:**
+```typescript
+{ id: string; catalogItemId: string; title: string; type: "VIDEO" | "PDF" | "LINK"; url: string; order: number; createdAt: string; }[]
+```
+
+### `POST /api/catalog/:id/materials` · `PATCH /api/catalog/:id/materials/:materialId` · `DELETE /api/catalog/:id/materials/:materialId`
+CRUD de materiais. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ title, type, url, order? }`; `PATCH` aceita subconjunto parcial.
+
+---
+
+## Blog / Artigos científicos (`/api/articles/`)
+
+Área de conteúdo da região do médico — mesma ideia do peptideo (texto simples com `white-space: pre-wrap`, vídeo opcional via YouTube, materiais pra download), sem rota pública própria nem slug.
+
+### `GET /api/articles?category=`
+**Auth:** autenticado + aprovado. Médico só vê `published: true`; staff (`MANAGER`/`ADMIN`) vê tudo (inclui rascunhos).
+
+**Response `200`:** array de `ArticleResponse`
+```typescript
+{ id: string; title: string; content: string; coverImageUrl: string | null; videoUrl: string | null; category: string | null; materials: { name: string; url: string }[]; published: boolean; publishedAt: string | null; createdAt: string; }[]
+```
+
+### `GET /api/articles/:id`
+Mesma regra de visibilidade do list. `404 ARTICLE_NOT_FOUND` se não existir ou (pra não-staff) não estiver publicado.
+
+### `POST /api/articles` · `PATCH /api/articles/:id` · `DELETE /api/articles/:id`
+CRUD de artigos. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ title, content, coverImageUrl?, videoUrl?, category?, materials?, published? }`. Primeira vez que `published` vira `true` seta `publishedAt`.
+
+---
+
+## Banners (`/api/banners/`)
+
+Carrossel full-bleed exibido no topo da Loja e do Blog — pools independentes por `placement` (`LOJA` | `BLOG`), igual ao peptideo (lá são dois JSONs separados; aqui é o mesmo model com um enum).
+
+### `GET /api/banners?placement=`
+**Auth:** autenticado + aprovado. Médico só vê `active: true`; staff vê todos (pra gestão), ordenado por `order` asc.
+
+**Response `200`:**
+```typescript
+{ id: string; placement: "LOJA" | "BLOG"; imageUrl: string; title: string | null; subtitle: string | null; active: boolean; order: number; createdAt: string; }[]
+```
+
+### `POST /api/banners` · `PATCH /api/banners/:id` · `DELETE /api/banners/:id`
+CRUD de banners. **Auth:** `MANAGER`/`ADMIN`. `POST` body = `{ placement, imageUrl, title?, subtitle?, active?, order? }`.
 
 ---
 

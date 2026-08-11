@@ -1,14 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Lock, PlayCircle, FileText, Link as LinkIcon } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../contexts/ToastContext";
-import { apiGetCatalogItem } from "../lib/api/catalog";
+import { apiGetCatalogItem, apiListCourseMaterials, type CourseMaterialType } from "../lib/api/catalog";
 import { apiCreateOrder } from "../lib/api/orders";
 import { ApiError } from "../lib/api/client";
+
+const materialIcons: Record<CourseMaterialType, typeof PlayCircle> = {
+  VIDEO: PlayCircle,
+  PDF: FileText,
+  LINK: LinkIcon,
+};
 
 export const Route = createFileRoute("/_medico/medico/cursos/$id")({
   component: CourseItemPage,
@@ -36,6 +42,16 @@ function CourseItemPage() {
     queryKey: ["catalog", id],
     queryFn: () => apiGetCatalogItem(id),
   });
+
+  const {
+    data: materials,
+    error: materialsError,
+  } = useQuery({
+    queryKey: ["courseMaterials", id],
+    queryFn: () => apiListCourseMaterials(id),
+    retry: false,
+  });
+  const enrollmentRequired = materialsError instanceof ApiError && materialsError.code === "ENROLLMENT_REQUIRED";
 
   const orderMutation = useMutation({
     mutationFn: () => apiCreateOrder(id),
@@ -113,6 +129,37 @@ function CourseItemPage() {
               Inscrever-se
             </Button>
           </div>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardBody className="space-y-3">
+          <h2 className="font-display text-lg text-fg">Materiais do curso</h2>
+          {enrollmentRequired ? (
+            <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-fg-muted">
+              <Lock size={16} className="shrink-0" />
+              Inscreva-se neste curso para desbloquear vídeos e materiais.
+            </div>
+          ) : materials && materials.length > 0 ? (
+            <div className="space-y-1.5">
+              {materials.map((m) => {
+                const Icon = materialIcons[m.type];
+                return (
+                  <a
+                    key={m.id}
+                    href={m.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-fg hover:border-accent/40 hover:text-accent"
+                  >
+                    <Icon size={14} /> {m.title}
+                  </a>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-sm text-fg-muted">Nenhum material disponível ainda.</p>
+          )}
         </CardBody>
       </Card>
     </PageContainer>

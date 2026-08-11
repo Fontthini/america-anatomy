@@ -125,6 +125,28 @@ Médico parceiro sem conta demonstra interesse num curso via formulário públic
 | PATCH | `/api/catalog/:id/registrations/:regId` | idem | `200 CourseRegistrationResponse` — body `{status}` |
 | GET | `/api/catalog/:id/orders` | idem | `200 EnrolledDoctorResponse[]` — quem já tem conta e se inscreveu de verdade |
 
+### Materiais do curso (`/api/catalog/:id/materials`) — vídeos/PDFs/links
+Médico só vê se tiver `Order` CONFIRMED naquele item (senão `403 ENROLLMENT_REQUIRED`); staff sempre vê.
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| GET | `/api/catalog/:id/materials` | Bearer + `requireApproved` | `200 CourseMaterialResponse[]` |
+| POST/PATCH/DELETE | `/api/catalog/:id/materials[/:materialId]` | Bearer + `requireRole(MANAGER,ADMIN)` | CRUD |
+
+### Blog / Artigos científicos (`/api/articles`)
+Médico só vê `published: true`; staff vê tudo (inclui rascunho). Sem rota pública/slug — acesso só autenticado.
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| GET | `/api/articles?category=` | Bearer + `requireApproved` | `200 ArticleResponse[]` |
+| GET | `/api/articles/:id` | idem | `200 ArticleResponse` |
+| POST/PATCH/DELETE | `/api/articles[/:id]` | Bearer + `requireRole(MANAGER,ADMIN)` | CRUD |
+
+### Banners (`/api/banners`) — carrossel da Loja e do Blog
+Pools independentes por `placement` (`LOJA`\|`BLOG`). Médico só vê `active: true`.
+| Método | Rota | Auth | Response |
+|--------|------|------|----------|
+| GET | `/api/banners?placement=` | Bearer + `requireApproved` | `200 BannerResponse[]` |
+| POST/PATCH/DELETE | `/api/banners[/:id]` | Bearer + `requireRole(MANAGER,ADMIN)` | CRUD |
+
 ### Financeiro (`/api/finance`) — MANAGER/ADMIN apenas
 Categoria é texto livre. Gatilhos automáticos: pedido criado → entrada (`PEDIDO PAGO`); comissão lançada → saída (`Comissão`).
 | Método | Rota | Response |
@@ -151,6 +173,7 @@ Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.
 `CATALOG_ITEM_NOT_FOUND`, `COURSE_FULL`, `SEMINAR_FULL`,
 `LEAD_NOT_FOUND`, `LEAD_ALREADY_ASSIGNED`, `REFERRAL_NOT_FOUND`,
 `COMMISSION_ALREADY_PAID`, `FINANCIAL_ENTRY_NOT_FOUND`,
+`ENROLLMENT_REQUIRED`, `COURSE_MATERIAL_NOT_FOUND`, `ARTICLE_NOT_FOUND`, `BANNER_NOT_FOUND`,
 `INTERNAL_ERROR`
 
 ---
@@ -160,6 +183,5 @@ Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.
 Auth: `change-password`
 Dashboard: `/api/dashboard`, `/api/invoices` (CRUD + export)
 Fase 3: tela de auditoria (`AuditLog` já existe, sem endpoint de leitura), link público rastreável de indicação, comissão percentual automática, upload de comprovante financeiro
-Catálogo: `GET /api/catalog/:id/orders` (staff: quem comprou/se inscreveu)
 
 Ver `docs/api-contract.md` para detalhes completos.

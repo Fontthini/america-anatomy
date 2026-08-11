@@ -63,6 +63,7 @@ export type CreateCatalogItemPayload =
       description?: string;
       imageUrl?: string;
       price?: number;
+      category?: string;
       startsAt: string;
       endsAt?: string;
       location?: string;
@@ -174,4 +175,60 @@ export async function apiUpdateRegistrationStatus(
 /** GET /api/catalog/:id/orders — staff, quem já tem conta e se inscreveu de verdade */
 export async function apiListEnrolledDoctors(catalogItemId: string): Promise<EnrolledDoctorResponse[]> {
   return apiFetch<EnrolledDoctorResponse[]>(`/api/catalog/${catalogItemId}/orders`);
+}
+
+// ---------------------------------------------------------------------------
+// Materiais do curso (vídeos/PDFs/links) — só pra quem se inscreveu, ou staff
+// ---------------------------------------------------------------------------
+
+export type CourseMaterialType = "VIDEO" | "PDF" | "LINK";
+
+export type CourseMaterialResponse = {
+  id: string;
+  catalogItemId: string;
+  title: string;
+  type: CourseMaterialType;
+  url: string;
+  order: number;
+  createdAt: string;
+};
+
+export type CourseMaterialPayload = {
+  title: string;
+  type: CourseMaterialType;
+  url: string;
+  order?: number;
+};
+
+/** GET /api/catalog/:id/materials — médico só se inscrito; staff sempre */
+export async function apiListCourseMaterials(catalogItemId: string): Promise<CourseMaterialResponse[]> {
+  return apiFetch<CourseMaterialResponse[]>(`/api/catalog/${catalogItemId}/materials`);
+}
+
+/** POST /api/catalog/:id/materials — staff/admin */
+export async function apiCreateCourseMaterial(
+  catalogItemId: string,
+  payload: CourseMaterialPayload,
+): Promise<CourseMaterialResponse> {
+  return apiFetch<CourseMaterialResponse>(`/api/catalog/${catalogItemId}/materials`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** PATCH /api/catalog/:id/materials/:materialId — staff/admin */
+export async function apiUpdateCourseMaterial(
+  catalogItemId: string,
+  materialId: string,
+  patch: Partial<CourseMaterialPayload>,
+): Promise<CourseMaterialResponse> {
+  return apiFetch<CourseMaterialResponse>(`/api/catalog/${catalogItemId}/materials/${materialId}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+}
+
+/** DELETE /api/catalog/:id/materials/:materialId — staff/admin */
+export async function apiDeleteCourseMaterial(catalogItemId: string, materialId: string): Promise<void> {
+  await apiFetch<void>(`/api/catalog/${catalogItemId}/materials/${materialId}`, { method: "DELETE" });
 }

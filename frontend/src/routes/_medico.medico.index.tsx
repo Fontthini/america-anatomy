@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ShoppingCart, GraduationCap, Package2, ArrowRight } from "lucide-react";
+import { ShoppingCart, GraduationCap, Package2, Newspaper, ArrowRight } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { useAuth } from "../contexts/AuthContext";
 import { apiListCatalogItems } from "../lib/api/catalog";
 import { apiListMyOrders } from "../lib/api/orders";
+import { apiListArticles } from "../lib/api/blog";
 
 export const Route = createFileRoute("/_medico/medico/")({
   component: MedicoHomePage,
@@ -22,6 +23,10 @@ function MedicoHomePage() {
     queryKey: ["myOrders"],
     queryFn: apiListMyOrders,
   });
+  const { data: articles = [] } = useQuery({
+    queryKey: ["articles"],
+    queryFn: () => apiListArticles(),
+  });
 
   const productCount = items.filter((i) => i.type === "PRODUCT").length;
   const courseCount = items.filter((i) => i.type === "COURSE" || i.type === "SEMINAR").length;
@@ -34,7 +39,7 @@ function MedicoHomePage() {
         description="Bem-vindo(a) à área exclusiva da America Anatomy Institute."
       />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/medico/loja">
           <Card className="group h-full transition-colors hover:border-line-strong">
             <CardBody className="flex items-center justify-between gap-4">
@@ -79,6 +84,23 @@ function MedicoHomePage() {
                 <div>
                   <p className="text-sm font-medium text-fg">Meus Pedidos</p>
                   <p className="text-xs text-fg-muted">{orders.length} pedidos/inscrições</p>
+                </div>
+              </div>
+              <ArrowRight size={16} className="text-fg-muted transition-transform group-hover:translate-x-0.5" />
+            </CardBody>
+          </Card>
+        </Link>
+
+        <Link to="/medico/blog">
+          <Card className="group h-full transition-colors hover:border-line-strong">
+            <CardBody className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent-soft text-accent">
+                  <Newspaper size={18} />
+                </span>
+                <div>
+                  <p className="text-sm font-medium text-fg">Blog</p>
+                  <p className="text-xs text-fg-muted">{articles.length} artigos científicos</p>
                 </div>
               </div>
               <ArrowRight size={16} className="text-fg-muted transition-transform group-hover:translate-x-0.5" />
