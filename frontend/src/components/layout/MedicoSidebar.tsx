@@ -46,9 +46,11 @@ export function MedicoSidebar({
     >
       <div className="flex h-14 items-center justify-between border-b border-line px-3">
         {!collapsed && (
-          <Link to="/medico" className="flex items-center gap-2 font-display text-lg text-fg">
+          <Link to="/medico" className="flex min-w-0 items-center gap-2">
             <AaiLogo size={28} />
-            AAI<span className="text-accent">.</span>
+            <span className="truncate font-display text-xs font-semibold leading-tight text-fg">
+              American Anatomy Institute
+            </span>
           </Link>
         )}
         <button

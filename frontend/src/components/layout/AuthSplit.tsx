@@ -17,9 +17,9 @@ export function AuthSplit({
       {/* Form column */}
       <div className="flex flex-col justify-between px-6 py-8 md:px-14 md:py-12">
         <header className="flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2 font-display text-xl text-fg">
-            <AaiLogo size={32} />
-            AAI<span className="text-accent">.</span>
+          <Link to="/" className="flex items-center gap-2.5">
+            <AaiLogo size={34} />
+            <span className="font-display text-base leading-tight text-fg sm:text-lg">American Anatomy Institute</span>
           </Link>
           <ThemeToggle />
         </header>

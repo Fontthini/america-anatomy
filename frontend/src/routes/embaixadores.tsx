@@ -90,9 +90,9 @@ function AmbassadorsPage() {
   return (
     <div className="brand-medico dark min-h-screen bg-bg">
       <header className="border-b border-line px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 font-display text-lg text-fg">
-          <AaiLogo size={30} />
-          AAI<span className="text-accent">.</span>
+        <Link to="/" className="flex items-center gap-2.5">
+          <AaiLogo size={32} />
+          <span className="font-display text-base leading-tight text-fg sm:text-lg">American Anatomy Institute</span>
         </Link>
       </header>
 

@@ -33,9 +33,11 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
       />
       <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-line-strong bg-popover p-3 shadow-[var(--shadow-pop)]">
         <div className="flex h-12 items-center justify-between border-b border-line px-1 pb-2">
-          <Link to="/dashboard" className="flex items-center gap-2 font-display text-lg text-fg" onClick={onClose}>
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-2" onClick={onClose}>
             <AaiLogo size={26} />
-            AAI<span className="text-accent">.</span>
+            <span className="truncate font-display text-xs font-semibold leading-tight text-fg">
+              American Anatomy Institute
+            </span>
           </Link>
           <button aria-label="Fechar" onClick={onClose} className="rounded-md p-1.5 text-fg-muted hover:bg-surface-1 hover:text-fg">
             <X size={16} />
