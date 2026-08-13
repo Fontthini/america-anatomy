@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
+import { AaiLogo } from "../ui/AaiLogo";
 import { cn } from "../../lib/cn";
 import { roleLabels, type Role } from "../../lib/mock/users";
 
@@ -70,8 +71,9 @@ export function Sidebar({
     >
       <div className="flex h-14 items-center justify-between border-b border-line px-3">
         {!collapsed && (
-          <Link to="/dashboard" className="font-display text-lg text-fg">
-            base<span className="text-accent">.</span>
+          <Link to="/dashboard" className="flex items-center gap-2 font-display text-lg text-fg">
+            <AaiLogo size={28} />
+            AAI<span className="text-accent">.</span>
           </Link>
         )}
         <button

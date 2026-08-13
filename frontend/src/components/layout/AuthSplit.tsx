@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { AaiLogo } from "../ui/AaiLogo";
 
 export function AuthSplit({
   children,
@@ -16,24 +17,22 @@ export function AuthSplit({
       {/* Form column */}
       <div className="flex flex-col justify-between px-6 py-8 md:px-14 md:py-12">
         <header className="flex items-center justify-between">
-          <Link to="/" className="font-display text-xl text-fg">
-            base<span className="text-accent">.</span>
+          <Link to="/" className="flex items-center gap-2 font-display text-xl text-fg">
+            <AaiLogo size={32} />
+            AAI<span className="text-accent">.</span>
           </Link>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-fg-muted">v0.1 — boilerplate</span>
-            <ThemeToggle />
-          </div>
+          <ThemeToggle />
         </header>
         <main className="mx-auto w-full max-w-[380px] py-12">{children}</main>
         <footer className="text-xs text-fg-muted">
-          © {new Date().getFullYear()} Base UI Kit.
+          © {new Date().getFullYear()} American Anatomy Institute.
         </footer>
       </div>
 
       {/* Brand column */}
       <div className="relative hidden border-l border-line bg-bg-elev md:flex md:flex-col md:justify-between md:p-14">
         <div className="text-xs uppercase tracking-[0.2em] text-fg-muted">
-          — Premium Dark Boilerplate
+          — Portal America Anatomy Institute
         </div>
         <blockquote className="max-w-md">
           <p className="font-display text-5xl leading-[1.05] text-fg">

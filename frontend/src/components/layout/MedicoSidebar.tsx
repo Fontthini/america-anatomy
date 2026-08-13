@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
+import { AaiLogo } from "../ui/AaiLogo";
 import { cn } from "../../lib/cn";
 
 type Item = { to: string; label: string; icon: typeof LayoutDashboard };
@@ -45,7 +46,8 @@ export function MedicoSidebar({
     >
       <div className="flex h-14 items-center justify-between border-b border-line px-3">
         {!collapsed && (
-          <Link to="/medico" className="font-display text-lg text-fg">
+          <Link to="/medico" className="flex items-center gap-2 font-display text-lg text-fg">
+            <AaiLogo size={28} />
             AAI<span className="text-accent">.</span>
           </Link>
         )}

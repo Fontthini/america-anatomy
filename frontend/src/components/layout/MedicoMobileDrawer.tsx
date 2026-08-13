@@ -1,6 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, Newspaper, Presentation, X } from "lucide-react";
+import { AaiLogo } from "../ui/AaiLogo";
 import { cn } from "../../lib/cn";
 
 const items = [
@@ -32,7 +33,8 @@ export function MedicoMobileDrawer({ open, onClose }: { open: boolean; onClose: 
       <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden="true" />
       <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-line-strong bg-popover p-3 shadow-[var(--shadow-pop)]">
         <div className="flex h-12 items-center justify-between border-b border-line px-1 pb-2">
-          <Link to="/medico" className="font-display text-lg text-fg" onClick={onClose}>
+          <Link to="/medico" className="flex items-center gap-2 font-display text-lg text-fg" onClick={onClose}>
+            <AaiLogo size={26} />
             AAI<span className="text-accent">.</span>
           </Link>
           <button aria-label="Fechar" onClick={onClose} className="rounded-md p-1.5 text-fg-muted hover:bg-surface-1 hover:text-fg">

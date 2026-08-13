@@ -7,6 +7,7 @@ import { Input } from "../components/ui/Input";
 import { Label } from "../components/ui/Label";
 import { Textarea } from "../components/ui/Textarea";
 import { Spinner } from "../components/ui/Spinner";
+import { AaiLogo } from "../components/ui/AaiLogo";
 import { apiGetPublicCourse, apiRegisterInterest } from "../lib/api/catalog";
 import { ApiError } from "../lib/api/client";
 
@@ -169,7 +170,8 @@ function PublicCoursePage() {
   return (
     <div className="brand-medico dark min-h-screen bg-bg">
       <header className="border-b border-line px-6 py-4">
-        <Link to="/" className="font-display text-lg text-fg">
+        <Link to="/" className="flex items-center gap-2 font-display text-lg text-fg">
+          <AaiLogo size={30} />
           AAI<span className="text-accent">.</span>
         </Link>
       </header>

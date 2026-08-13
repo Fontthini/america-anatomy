@@ -83,27 +83,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Base — Premium Dark Boilerplate" },
+      { title: "American Anatomy Institute — Portal" },
       {
         name: "description",
-        content:
-          "Boilerplate front-end com estética minimalista escura, pronto para conectar a uma API.",
+        content: "Portal exclusivo da American Anatomy Institute — loja, cursos e conteúdo para médicos parceiros.",
       },
-      { property: "og:title", content: "Base — Premium Dark Boilerplate" },
+      { property: "og:title", content: "American Anatomy Institute — Portal" },
       {
         property: "og:description",
-        content:
-          "Boilerplate front-end com estética minimalista escura, pronto para conectar a uma API.",
+        content: "Portal exclusivo da American Anatomy Institute — loja, cursos e conteúdo para médicos parceiros.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      { rel: "icon", type: "image/webp", href: "/logo-aai.webp" },
     ],
   }),
   shellComponent: RootShell,
