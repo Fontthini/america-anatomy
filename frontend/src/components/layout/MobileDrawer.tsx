@@ -32,10 +32,10 @@ export function MobileDrawer({ open, onClose }: { open: boolean; onClose: () => 
         aria-hidden="true"
       />
       <aside className="absolute left-0 top-0 h-full w-[260px] border-r border-line-strong bg-popover p-3 shadow-[var(--shadow-pop)]">
-        <div className="flex h-12 items-center justify-between border-b border-line px-1 pb-2">
-          <Link to="/dashboard" className="flex min-w-0 items-center gap-2" onClick={onClose}>
-            <AaiLogo size={26} />
-            <span className="truncate font-display text-xs font-semibold leading-tight text-fg">
+        <div className="flex h-16 items-center justify-between border-b border-line px-1 pb-2">
+          <Link to="/dashboard" className="flex min-w-0 items-center gap-2.5" onClick={onClose}>
+            <AaiLogo size={38} />
+            <span className="font-display text-sm font-semibold leading-tight text-fg">
               American Anatomy Institute
             </span>
           </Link>

@@ -44,11 +44,11 @@ export function MedicoSidebar({
         collapsed ? "w-[64px]" : "w-[232px]",
       )}
     >
-      <div className="flex h-14 items-center justify-between border-b border-line px-3">
+      <div className="flex h-20 items-center justify-between border-b border-line px-3">
         {!collapsed && (
-          <Link to="/medico" className="flex min-w-0 items-center gap-2">
-            <AaiLogo size={28} />
-            <span className="truncate font-display text-xs font-semibold leading-tight text-fg">
+          <Link to="/medico" className="flex min-w-0 items-center gap-2.5">
+            <AaiLogo size={42} />
+            <span className="font-display text-sm font-semibold leading-tight text-fg">
               American Anatomy Institute
             </span>
           </Link>
