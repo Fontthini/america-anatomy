@@ -7,6 +7,7 @@ import {
   handleListDoctors,
   handleApproveDoctor,
   handleRejectDoctor,
+  handleDeleteDoctor,
 } from "./doctors.controller.js";
 
 export async function doctorsRoutes(app: FastifyInstance): Promise<void> {
@@ -31,5 +32,11 @@ export async function doctorsRoutes(app: FastifyInstance): Promise<void> {
     "/api/doctors/:id/reject",
     { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleRejectDoctor,
+  );
+  // Apaga de verdade (não é rejeitar) — só ADMIN, ação sem volta.
+  app.delete(
+    "/api/doctors/:id",
+    { preHandler: [authenticate, requireRole("ADMIN")] },
+    handleDeleteDoctor,
   );
 }

@@ -1,6 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { doctorRegisterSchema, rejectDoctorSchema, listDoctorsQuerySchema } from "./doctors.schemas.js";
-import { registerDoctor, getMyDoctorProfile, listDoctors, approveDoctor, rejectDoctor } from "./doctors.service.js";
+import { registerDoctor, getMyDoctorProfile, listDoctors, approveDoctor, rejectDoctor, deleteDoctor } from "./doctors.service.js";
 import { env } from "../../config/env.js";
 import { refreshTokenTtlSeconds } from "../../lib/jwt.js";
 
@@ -45,4 +45,10 @@ export async function handleRejectDoctor(req: FastifyRequest, reply: FastifyRepl
   const input = rejectDoctorSchema.parse(req.body ?? {});
   const profile = await rejectDoctor({ id: req.user.id, name: req.user.name, role: req.user.role }, id, input);
   reply.status(200).send(profile);
+}
+
+export async function handleDeleteDoctor(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  await deleteDoctor(id);
+  reply.status(204).send();
 }

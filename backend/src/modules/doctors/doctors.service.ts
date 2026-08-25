@@ -130,6 +130,21 @@ async function findProfileByUserIdOrThrow(
   return profile;
 }
 
+/**
+ * Apaga o médico de verdade (User + DoctorProfile), não é rejeitar. Tudo que
+ * pende do User/DoctorProfile sai em cascata pelo schema (LeadActivity,
+ * LeadReminder, Referral, Order, RefreshToken, PasswordHistory, Notification,
+ * VerificationToken); AuditLog.actorUserId e CatalogItem.instructorUserId só
+ * ficam null (SET NULL de propósito, não bloqueiam a exclusão).
+ */
+export async function deleteDoctor(doctorUserId: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: doctorUserId } });
+  if (!user || user.role !== "DOCTOR") {
+    throw new AppError(404, "DOCTOR_PROFILE_NOT_FOUND", "Médico não encontrado.");
+  }
+  await prisma.user.delete({ where: { id: doctorUserId } });
+}
+
 export async function approveDoctor(
   actor: { id: string; name: string; role: string },
   doctorUserId: string,
