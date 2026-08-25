@@ -62,7 +62,8 @@ export async function registerDoctor(input: DoctorRegisterInput): Promise<AuthRe
 
   void sendEmail({ to: user.email, ...doctorPendingApprovalTemplate({ name: user.name }) });
 
-  const { accessToken, refreshToken } = issueTokens(user);
+  // DoctorProfile recém-criado nasce PENDING (default do schema) — sem precisar reconsultar.
+  const { accessToken, refreshToken } = issueTokens({ ...user, doctorApprovalStatus: "PENDING" });
   await persistRefreshToken(user.id, refreshToken);
 
   void createNotification(user.id, NotificationType.DOCTOR_REGISTRATION_RECEIVED);

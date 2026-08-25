@@ -1,9 +1,14 @@
 import jwt from "jsonwebtoken";
+import type { Role, ApprovalStatus } from "@prisma/client";
 import { env } from "../config/env.js";
 
 export type AccessTokenPayload = {
   sub: string;
   email: string;
+  name: string;
+  role: Role;
+  /** Só existe quando role === "DOCTOR". Ausente = sem DoctorProfile (nunca considerado aprovado). */
+  doctorApprovalStatus?: ApprovalStatus;
 };
 
 export type RefreshTokenPayload = {

@@ -15,7 +15,7 @@ import {
   buildResetUrl,
 } from "../../lib/email/templates.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
-import type { Role } from "@prisma/client";
+import type { Role, ApprovalStatus } from "@prisma/client";
 import type {
   RegisterInput,
   LoginInput,
@@ -60,13 +60,25 @@ export function toUserResponse(user: {
 }
 
 /** Exportado para reuso por outros módulos que emitem sessão no ato de criação (ex.: doctors). */
-export function issueTokens(user: { id: string; email: string }): {
+export function issueTokens(user: {
+  id: string;
+  email: string;
+  name: string;
+  role: Role;
+  doctorApprovalStatus?: ApprovalStatus;
+}): {
   accessToken: string;
   refreshToken: string;
   jti: string;
 } {
   const jti = randomUUID();
-  const accessToken = signAccessToken({ sub: user.id, email: user.email });
+  const accessToken = signAccessToken({
+    sub: user.id,
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    ...(user.doctorApprovalStatus ? { doctorApprovalStatus: user.doctorApprovalStatus } : {}),
+  });
   const refreshToken = signRefreshToken({ sub: user.id, jti });
   return { accessToken, refreshToken, jti };
 }
@@ -128,7 +140,10 @@ export async function registerUser(input: RegisterInput): Promise<AuthResponse> 
 }
 
 export async function loginUser(input: LoginInput): Promise<AuthResponse> {
-  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  const user = await prisma.user.findUnique({
+    where: { email: input.email },
+    include: { doctorProfile: { select: { approvalStatus: true } } },
+  });
   if (!user) {
     throw new AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha incorretos.");
   }
@@ -141,7 +156,10 @@ export async function loginUser(input: LoginInput): Promise<AuthResponse> {
     throw new AppError(401, "INVALID_CREDENTIALS", "E-mail ou senha incorretos.", details);
   }
 
-  const { accessToken, refreshToken } = issueTokens(user);
+  const { accessToken, refreshToken } = issueTokens({
+    ...user,
+    ...(user.doctorProfile ? { doctorApprovalStatus: user.doctorProfile.approvalStatus } : {}),
+  });
   await persistRefreshToken(user.id, refreshToken);
 
   return { user: toUserResponse(user), token: accessToken, refreshToken };
@@ -164,12 +182,18 @@ export async function refreshUserToken(
 
   await prisma.refreshToken.delete({ where: { id: stored.id } });
 
-  const user = await prisma.user.findUnique({ where: { id: payload.sub } });
+  const user = await prisma.user.findUnique({
+    where: { id: payload.sub },
+    include: { doctorProfile: { select: { approvalStatus: true } } },
+  });
   if (!user) {
     throw new AppError(401, "UNAUTHORIZED", "Usuário não encontrado.");
   }
 
-  const { accessToken, refreshToken: newRefreshToken } = issueTokens(user);
+  const { accessToken, refreshToken: newRefreshToken } = issueTokens({
+    ...user,
+    ...(user.doctorProfile ? { doctorApprovalStatus: user.doctorProfile.approvalStatus } : {}),
+  });
   await persistRefreshToken(user.id, newRefreshToken);
 
   return { token: accessToken, newRefreshToken };
