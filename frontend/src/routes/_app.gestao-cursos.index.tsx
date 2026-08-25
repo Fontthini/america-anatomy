@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, MapPin, ArrowRight } from "lucide-react";
+import { Calendar, MapPin, ArrowRight, Plus } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
+import { Button } from "../components/ui/Button";
 import { apiListCatalogItems } from "../lib/api/catalog";
 
 export const Route = createFileRoute("/_app/gestao-cursos/")({
@@ -20,7 +21,7 @@ function formatDate(iso: string | null): string | null {
 
 function ManageCoursesPage() {
   const { data: items = [], isLoading } = useQuery({
-    queryKey: ["catalog", "staff-all"],
+    queryKey: ["catalog", "staff-events"],
     queryFn: () => apiListCatalogItems(),
   });
 
@@ -28,7 +29,16 @@ function ManageCoursesPage() {
 
   return (
     <PageContainer>
-      <PageHeader eyebrow="CRM" title="Gestão de Cursos" description="Cursos e seminários — veja quem se inscreveu em cada turma." />
+      <PageHeader
+        eyebrow="CRM"
+        title="Gestão de Cursos"
+        description="Cursos e seminários — veja quem se inscreveu em cada turma."
+        action={
+          <Link to="/catalogo/novo" search={{ type: "COURSE" }}>
+            <Button leftIcon={<Plus size={14} />}>Novo curso</Button>
+          </Link>
+        }
+      />
 
       {isLoading ? (
         <p className="text-sm text-fg-muted">Carregando…</p>

@@ -30,13 +30,16 @@ export function CatalogItemForm({
   initial,
   onSubmit,
   submitting,
+  allowedTypes = ["PRODUCT", "COURSE", "SEMINAR"],
 }: {
   mode: "create" | "edit";
   initial?: CatalogItemResponse;
   onSubmit: (values: CatalogFormValues) => void;
   submitting: boolean;
+  /** Restringe o seletor de tipo — ex.: Loja só cria PRODUCT, Cursos só COURSE/SEMINAR. */
+  allowedTypes?: CatalogItemType[];
 }) {
-  const [type, setType] = useState<CatalogItemType>(initial?.type ?? "PRODUCT");
+  const [type, setType] = useState<CatalogItemType>(initial?.type ?? allowedTypes[0] ?? "PRODUCT");
   const [title, setTitle] = useState(initial?.title ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [imageUrl, setImageUrl] = useState(initial?.imageUrl ?? "");
@@ -94,10 +97,11 @@ export function CatalogItemForm({
     <Card>
       <CardBody>
         <form onSubmit={handleSubmit} className="space-y-5">
+          {allowedTypes.length > 1 && (
           <div className="space-y-1.5">
             <Label>Tipo</Label>
             <div className="flex gap-2">
-              {typeOptions.map((opt) => (
+              {typeOptions.filter((opt) => allowedTypes.includes(opt.value)).map((opt) => (
                 <button
                   key={opt.value}
                   type="button"
@@ -116,6 +120,7 @@ export function CatalogItemForm({
               ))}
             </div>
           </div>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="title">Título</Label>
