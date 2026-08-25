@@ -64,15 +64,13 @@ function toCatalogItemResponse(item: CatalogItemWithInstructor, confirmedOrders:
   };
 }
 
-async function countConfirmedOrdersByItem(itemIds: string[]): Promise<Map<string, number>> {
-  if (itemIds.length === 0) return new Map();
-  const groups = await prisma.order.groupBy({
-    by: ["catalogItemId"],
-    where: { catalogItemId: { in: itemIds }, status: "CONFIRMED" },
-    _count: { _all: true },
-  });
-  return new Map(groups.map((g) => [g.catalogItemId, g._count._all]));
-}
+// Conta pedidos confirmados junto com a query principal (via _count), em vez de
+// um segundo round-trip separado — cada round-trip pro Postgres custa ~1-1.5s
+// nessa rede, então evitar consultas sequenciais é o que mais importa aqui.
+const withConfirmedOrdersCount = {
+  instructor: { select: { name: true } },
+  _count: { select: { orders: { where: { status: "CONFIRMED" as const } } } },
+} as const;
 
 /** doctors só enxergam PUBLISHED, independentemente do filtro solicitado; staff/admin enxergam qualquer status. */
 export async function listCatalogItems(
@@ -86,10 +84,9 @@ export async function listCatalogItems(
   const items = await prisma.catalogItem.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { instructor: { select: { name: true } } },
+    include: withConfirmedOrdersCount,
   });
-  const counts = await countConfirmedOrdersByItem(items.map((i) => i.id));
-  return items.map((item) => toCatalogItemResponse(item, counts.get(item.id) ?? 0));
+  return items.map((item) => toCatalogItemResponse(item, item._count.orders));
 }
 
 export async function getCatalogItemById(
@@ -98,13 +95,12 @@ export async function getCatalogItemById(
 ): Promise<CatalogItemResponse> {
   const item = await prisma.catalogItem.findUnique({
     where: { id },
-    include: { instructor: { select: { name: true } } },
+    include: withConfirmedOrdersCount,
   });
   if (!item || (!isStaffOrAdmin && item.status !== "PUBLISHED")) {
     throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Item de catálogo não encontrado.");
   }
-  const counts = await countConfirmedOrdersByItem([item.id]);
-  return toCatalogItemResponse(item, counts.get(item.id) ?? 0);
+  return toCatalogItemResponse(item, item._count.orders);
 }
 
 export async function createCatalogItem(input: CreateCatalogItemInput): Promise<CatalogItemResponse> {
@@ -145,10 +141,9 @@ export async function updateCatalogItem(
   const item = await prisma.catalogItem.update({
     where: { id },
     data: input,
-    include: { instructor: { select: { name: true } } },
+    include: withConfirmedOrdersCount,
   });
-  const counts = await countConfirmedOrdersByItem([item.id]);
-  return toCatalogItemResponse(item, counts.get(item.id) ?? 0);
+  return toCatalogItemResponse(item, item._count.orders);
 }
 
 export async function archiveCatalogItem(id: string): Promise<CatalogItemResponse> {
@@ -187,12 +182,14 @@ function toCourseRegistrationResponse(reg: CourseRegistration): CourseRegistrati
 }
 
 export async function getPublicCourseBySlug(slug: string): Promise<PublicCatalogItemResponse> {
-  const item = await prisma.catalogItem.findUnique({ where: { slug } });
+  const item = await prisma.catalogItem.findUnique({
+    where: { slug },
+    include: { _count: { select: { orders: { where: { status: "CONFIRMED" } } } } },
+  });
   if (!item || item.status !== "PUBLISHED" || (item.type !== "COURSE" && item.type !== "SEMINAR")) {
     throw new AppError(404, "CATALOG_ITEM_NOT_FOUND", "Curso não encontrado.");
   }
-  const counts = await countConfirmedOrdersByItem([item.id]);
-  const confirmedOrders = counts.get(item.id) ?? 0;
+  const confirmedOrders = item._count.orders;
   return {
     id: item.id,
     type: item.type,
@@ -231,10 +228,9 @@ export async function listMyInstructedCourses(userId: string): Promise<CatalogIt
   const items = await prisma.catalogItem.findMany({
     where: { instructorUserId: userId },
     orderBy: { startsAt: "asc" },
-    include: { instructor: { select: { name: true } } },
+    include: withConfirmedOrdersCount,
   });
-  const counts = await countConfirmedOrdersByItem(items.map((i) => i.id));
-  return items.map((item) => toCatalogItemResponse(item, counts.get(item.id) ?? 0));
+  return items.map((item) => toCatalogItemResponse(item, item._count.orders));
 }
 
 /** Formulário público — médico parceiro sem conta demonstra interesse num curso/seminário. */
