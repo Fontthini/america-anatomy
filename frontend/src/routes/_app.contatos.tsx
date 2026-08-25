@@ -30,6 +30,7 @@ import {
   type LeadResponse,
   type CreateLeadPayload,
 } from "../lib/api/crm";
+import { apiListCatalogItems } from "../lib/api/catalog";
 
 export const Route = createFileRoute("/_app/contatos")({
   component: ContactsPage,
@@ -101,6 +102,12 @@ function LeadDrawer({ lead, onClose }: { lead: LeadResponse; onClose: () => void
   const [city, setCity] = useState(lead.city ?? "");
   const [state, setState] = useState(lead.state ?? "");
   const [leadSource, setLeadSource] = useState<LeadSource | "">(lead.leadSource ?? "");
+  const [courseOfInterestId, setCourseOfInterestId] = useState(lead.courseOfInterestId ?? "");
+
+  const { data: courses = [] } = useQuery({
+    queryKey: ["catalog", "COURSE", "leadDrawer"],
+    queryFn: () => apiListCatalogItems({ type: "COURSE" }),
+  });
 
   const updateMutation = useMutation({
     mutationFn: () =>
@@ -114,6 +121,7 @@ function LeadDrawer({ lead, onClose }: { lead: LeadResponse; onClose: () => void
         city: city || undefined,
         state: state || undefined,
         leadSource: (leadSource as LeadSource) || undefined,
+        courseOfInterestId: courseOfInterestId || null,
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["leads"] });
@@ -249,6 +257,22 @@ function LeadDrawer({ lead, onClose }: { lead: LeadResponse; onClose: () => void
                   {LEAD_SOURCES.map((s) => (
                     <option key={s.value} value={s.value}>
                       {s.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="courseOfInterest">Curso de interesse</Label>
+                <select
+                  id="courseOfInterest"
+                  value={courseOfInterestId}
+                  onChange={(e) => setCourseOfInterestId(e.target.value)}
+                  className="h-10 w-full rounded-md border border-line bg-surface-1 px-3 text-sm text-fg focus:border-accent/60 focus:outline-none"
+                >
+                  <option value="">Nenhum</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.title}
                     </option>
                   ))}
                 </select>

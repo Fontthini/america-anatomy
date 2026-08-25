@@ -4,7 +4,6 @@ import {
   ShoppingCart,
   GraduationCap,
   Package2,
-  Share2,
   Newspaper,
   ChevronsLeft,
   ChevronsRight,
@@ -22,7 +21,6 @@ const items: Item[] = [
   { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
   { to: "/medico/blog", label: "Blog", icon: Newspaper },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
-  { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];
 
 export function MedicoSidebar({

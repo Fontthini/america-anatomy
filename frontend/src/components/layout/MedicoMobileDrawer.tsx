@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Share2, Newspaper, X } from "lucide-react";
+import { LayoutDashboard, ShoppingCart, GraduationCap, Package2, Newspaper, X } from "lucide-react";
 import { AaiLogo } from "../ui/AaiLogo";
 import { cn } from "../../lib/cn";
 
@@ -10,7 +10,6 @@ const items = [
   { to: "/medico/cursos", label: "Cursos", icon: GraduationCap },
   { to: "/medico/blog", label: "Blog", icon: Newspaper },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
-  { to: "/medico/indicar", label: "Indicar", icon: Share2 },
 ];
 
 export function MedicoMobileDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {

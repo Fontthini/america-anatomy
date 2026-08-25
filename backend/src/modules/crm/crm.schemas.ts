@@ -69,6 +69,7 @@ export const updateLeadSchema = z.object({
   city: z.string().max(100).optional(),
   state: z.string().max(2).optional(),
   leadSource: z.enum(LEAD_SOURCES).optional(),
+  courseOfInterestId: z.string().nullable().optional(),
 });
 
 export const createActivitySchema = z.object({

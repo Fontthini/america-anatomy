@@ -11,7 +11,6 @@ import {
   Bell,
   UserCheck,
   KanbanSquare,
-  Share2,
   Wallet,
   GraduationCap,
   Package,
@@ -37,7 +36,6 @@ type Item = {
 const items: Item[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/contatos", label: "Contatos", icon: KanbanSquare, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
-  { to: "/indicacoes", label: "Indicações", icon: Share2, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["MANAGER", "ADMIN"] },
   { to: "/catalogo", label: "Catálogo", icon: Package, roles: ["MANAGER", "ADMIN"] },
   { to: "/gestao-cursos", label: "Cursos", icon: GraduationCap, roles: ["MANAGER", "ADMIN"] },

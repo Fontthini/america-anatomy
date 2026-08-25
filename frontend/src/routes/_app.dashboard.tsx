@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import {
   KanbanSquare,
-  Share2,
   Wallet,
   Package,
   GraduationCap,
@@ -20,7 +19,6 @@ import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { useAuth } from "../contexts/AuthContext";
 import { apiListLeads } from "../lib/api/crm";
-import { apiListReferrals } from "../lib/api/referrals";
 import { apiGetFinancialSummary } from "../lib/api/finance";
 import { apiListCatalogItems } from "../lib/api/catalog";
 import { apiListDoctors } from "../lib/api/doctors";
@@ -91,12 +89,6 @@ function DashboardPage() {
     enabled: canSeeCrm,
   });
 
-  const { data: referrals = [] } = useQuery({
-    queryKey: ["referrals", "dashboard"],
-    queryFn: () => apiListReferrals(),
-    enabled: canSeeCrm,
-  });
-
   const { data: finance } = useQuery({
     queryKey: ["financeSummary"],
     queryFn: apiGetFinancialSummary,
@@ -125,7 +117,6 @@ function DashboardPage() {
   });
 
   const customerLeads = leads.filter((l) => l.funnelStage === "CUSTOMER").length;
-  const pendingCommission = referrals.filter((r) => !r.commissionPaid).length;
   const publishedProducts = catalog.filter((c) => c.status === "PUBLISHED" && c.type === "PRODUCT").length;
   const publishedCourses = catalog.filter(
     (c) => c.status === "PUBLISHED" && (c.type === "COURSE" || c.type === "SEMINAR"),
@@ -161,12 +152,6 @@ function DashboardPage() {
               sublabel={`${customerLeads} viraram cliente`}
               icon={<KanbanSquare size={18} />}
             />
-            <StatCard
-              label="Indicações"
-              value={referrals.length}
-              sublabel={pendingCommission > 0 ? `${pendingCommission} sem comissão lançada` : undefined}
-              icon={<Share2 size={18} />}
-            />
             {isManager && finance && (
               <StatCard
                 label="Saldo financeiro"
@@ -187,7 +172,6 @@ function DashboardPage() {
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <QuickLink to="/contatos" label="Contatos" icon={<KanbanSquare size={16} />} />
-            <QuickLink to="/indicacoes" label="Indicações" icon={<Share2 size={16} />} />
             {isManager && <QuickLink to="/financeiro" label="Financeiro" icon={<Wallet size={16} />} />}
             {isManager && <QuickLink to="/catalogo" label="Catálogo" icon={<Package size={16} />} />}
             {isManager && <QuickLink to="/gestao-cursos" label="Gestão de Cursos" icon={<GraduationCap size={16} />} />}

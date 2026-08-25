@@ -91,7 +91,9 @@ export type CreateLeadPayload = {
   leadSource?: LeadSource;
 };
 
-export type UpdateLeadPayload = Partial<Omit<CreateLeadPayload, "name" | "email">>;
+export type UpdateLeadPayload = Partial<Omit<CreateLeadPayload, "name" | "email">> & {
+  courseOfInterestId?: string | null;
+};
 
 /** GET /api/crm/leads?funnelStage=&scope=&courseOfInterestId= */
 export async function apiListLeads(filters?: {

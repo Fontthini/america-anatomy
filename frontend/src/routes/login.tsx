@@ -89,7 +89,7 @@ function LoginPage() {
   }
 
   return (
-    <AuthSplit quote="Train more to err less." caption="Acesse a plataforma exclusiva da American Anatomy Institute.">
+    <AuthSplit quote="Prática real, precisão técnica e confiança profissional." caption="Acesse a plataforma exclusiva da American Anatomy Institute.">
       <div className="space-y-8">
         <div>
           <h1 className="font-display text-4xl text-fg">Entrar</h1>
