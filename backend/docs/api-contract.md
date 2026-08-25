@@ -86,6 +86,7 @@ Todos os erros seguem este shape:
 | `ARTICLE_NOT_FOUND` | 404 | Artigo inexistente, ou não publicado para quem não é staff/admin |
 | `BANNER_NOT_FOUND` | 404 | Banner inexistente |
 | `AMBASSADOR_APPLICATION_NOT_FOUND` | 404 | Candidatura de embaixador inexistente |
+| `LEAD_REMINDER_NOT_FOUND` | 404 | Lembrete de agenda do CRM inexistente |
 | `INTERNAL_ERROR` | 500 | Erro interno |
 
 ---
@@ -680,13 +681,16 @@ Lista os pedidos do médico autenticado, mais recentes primeiro.
 
 ---
 
-## CRM (`/api/crm/`) — funil de vendas
+## CRM (`/api/crm/`) — Contatos (funil de vendas)
 
-Fase 2. O estágio do funil vive direto no `DoctorProfile` (não é uma entidade separada), mesma ideia do sistema irmão "peptideo". Papéis internos: `SALES_REP` (vendedor — só vê os próprios leads + os sem vendedor), `MANAGER`/`ADMIN` (veem tudo).
+Fase 2, expandido na Fase 4 ("Contatos" — cadastro completo, origem do lead, histórico e agenda). O estágio do funil vive direto no `DoctorProfile` (não é uma entidade separada), mesma ideia do sistema irmão "peptideo". Papéis internos: `SALES_REP` (vendedor — só vê os próprios leads + os sem vendedor), `MANAGER`/`ADMIN` (veem tudo). No frontend esse módulo aparece como **"Contatos"** (`/contatos`), não mais "Funil".
 
-**`FunnelStage`:** `NEW | FIRST_CONTACT | AWAITING_RESPONSE | INTERESTED | PAYMENT_LINK_SENT | CUSTOMER | LOST`
+**`FunnelStage`:** `NEW | FIRST_CONTACT | AWAITING_RESPONSE | INFO_RECEIVED | INTERESTED | PAYMENT_LINK_SENT | CUSTOMER | WITHDRAWN | LOST`
+(`INFO_RECEIVED` e `WITHDRAWN` adicionados na Fase 4 — antes só existia `LOST` pra qualquer saída do funil.)
 
-Novo médico cadastrado é **atribuído automaticamente** a um vendedor (o com menos leads no momento — equivalente ao round-robin do peptideo, mas autoequilibrado em vez de um cursor rotativo). Vendedor **não decide** aprovação/rejeição de médico diretamente — só pode *solicitar* uma decisão (`approvalStatus` vira `IN_REVIEW`); só `MANAGER`/`ADMIN` finalizam via `PATCH /api/doctors/:id/approve|reject` (módulo Médicos).
+**`LeadSource`:** `INSTAGRAM | FACEBOOK | GOOGLE | LINKEDIN | SITE | INDICACAO | CONGRESSO | EVENTO | WHATSAPP_UNINGA | EX_ALUNO | OUTRO`
+
+Novo médico cadastrado (via `/register-medico`) é **atribuído automaticamente** a um vendedor (o com menos leads no momento — equivalente ao round-robin do peptideo, mas autoequilibrado em vez de um cursor rotativo). Contatos criados manualmente pelo CRM (`POST /api/crm/leads`) seguem a mesma regra, exceto quando quem cria já é `SALES_REP` — nesse caso o contato é atribuído a ele mesmo direto. Vendedor **não decide** aprovação/rejeição de médico diretamente — só pode *solicitar* uma decisão (`approvalStatus` vira `IN_REVIEW`); só `MANAGER`/`ADMIN` finalizam via `PATCH /api/doctors/:id/approve|reject` (módulo Médicos).
 
 ### `GET /api/crm/leads?funnelStage=&scope=mine|unassigned|all`
 
@@ -698,10 +702,15 @@ Novo médico cadastrado é **atribuído automaticamente** a um vendedor (o com m
   id: string;                    // DoctorProfile.id
   userId: string;
   name: string; email: string;
-  crm: string | null; specialty: string | null; clinicName: string | null; city: string | null; state: string | null;
+  phone: string | null;
+  crm: string | null; specialty: string | null;
+  profession: string | null;     // "Profissão" — livre, ex.: "Médico(a)", "Nutricionista"
+  cpf: string | null;
+  clinicName: string | null; city: string | null; state: string | null;
+  leadSource: LeadSource | null;
   approvalStatus: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
   funnelStage: FunnelStage;
-  lossReason: string | null;
+  lossReason: string | null;     // salvo quando funnelStage é "LOST" ou "WITHDRAWN"
   assignedSalesRepId: string | null;
   assignedSalesRepName: string | null;
   reviewRequestedAction: "APPROVE" | "REJECT" | null;
@@ -711,9 +720,39 @@ Novo médico cadastrado é **atribuído automaticamente** a um vendedor (o com m
 
 ---
 
+### `POST /api/crm/leads`
+
+Cadastro **manual** de contato/lead direto pelo CRM (ex.: chegou por Instagram, WhatsApp, evento) — sem passar pelo formulário público `/register-medico`. Cria um `User` (role `DOCTOR`, `approvalStatus: PENDING`) com senha aleatória (o contato não recebe/usa essa senha; se um dia precisar logar como médico de verdade, usaria o fluxo de "esqueci a senha").
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`
+
+**Request body:**
+```json
+{ "name": "string", "email": "string", "phone": "string", "profession": "string", "specialty": "string", "crm": "string", "cpf": "string", "clinicName": "string", "city": "string", "state": "string", "leadSource": "INSTAGRAM" }
+```
+Só `name` e `email` são obrigatórios.
+
+**Response `201`:** `LeadResponse`
+
+**Erros:** `400 VALIDATION_ERROR`, `409 EMAIL_ALREADY_EXISTS`
+
+---
+
+### `PATCH /api/crm/leads/:id`
+
+Edita os dados de cadastro de um contato (tudo exceto nome/e-mail, pra não colidir com o login).
+
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`. Vendedor só edita leads atribuídos a ele.
+
+**Request body:** subconjunto parcial de `{ phone, profession, specialty, crm, cpf, clinicName, city, state, leadSource }`
+
+**Response `200`:** `LeadResponse`
+
+---
+
 ### `PATCH /api/crm/leads/:id/funnel`
 
-Move o lead pra outro estágio do funil. `:id` é o `DoctorProfile.id`. `lossReason` só é salvo quando `funnelStage: "LOST"` (limpo automaticamente nos demais estágios).
+Move o lead pra outro estágio do funil. `:id` é o `DoctorProfile.id`. `lossReason` só é salvo quando `funnelStage` é `"LOST"` ou `"WITHDRAWN"` (limpo automaticamente nos demais estágios).
 
 **Auth:** role `SALES_REP`/`MANAGER`/`ADMIN`. Vendedor só move leads atribuídos a ele.
 
@@ -752,6 +791,36 @@ Vendedor solicita a um gerente/admin que aprove ou rejeite o cadastro do médico
 ```
 
 **Response `200`:** `LeadResponse`
+
+---
+
+### Histórico completo (`/api/crm/leads/:id/activities`)
+
+"Tudo deve ficar registrado" — ligações, WhatsApp, e-mails, observações, envio de forma de pagamento. `LeadActivityType`: `CALL | WHATSAPP | EMAIL | NOTE | PAYMENT_METHOD`.
+
+**`GET /api/crm/leads/:id/activities`** · **`POST /api/crm/leads/:id/activities`**
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN` (vendedor só acessa leads dele). `POST` body = `{ "type": "WHATSAPP", "note": "string" }`.
+
+**Response:** array de `LeadActivityResponse` (GET) / `LeadActivityResponse` (POST `201`)
+```typescript
+{ id: string; doctorProfileId: string; type: LeadActivityType; note: string; createdByUserId: string | null; createdByName: string | null; createdAt: string; }
+```
+
+---
+
+### Agenda / lembretes (`/api/crm/leads/:id/reminders`)
+
+"Ligar amanhã", "retornar em 7 dias", "cobrar retorno", etc.
+
+**`GET /api/crm/leads/:id/reminders`** · **`POST /api/crm/leads/:id/reminders`** · **`PATCH /api/crm/leads/:id/reminders/:reminderId`**
+**Auth:** role `SALES_REP`/`MANAGER`/`ADMIN` (vendedor só acessa leads dele). `POST` body = `{ "label": "string", "dueAt": "2026-08-26T13:00:00Z" }`. `PATCH` body = `{ "done": true }` (marca feito/não feito).
+
+**Response:** `LeadReminderResponse`
+```typescript
+{ id: string; doctorProfileId: string; label: string; dueAt: string; done: boolean; createdByUserId: string | null; createdByName: string | null; createdAt: string; }
+```
+
+**Erros comuns da seção:** `403 FORBIDDEN`, `404 LEAD_NOT_FOUND`, `404 LEAD_REMINDER_NOT_FOUND`
 
 ---
 

@@ -96,14 +96,21 @@ Auth: — | Response `200`: `{ status: "ok", timestamp: string }`
 | POST | `/api/orders` | Bearer + `requireRole(DOCTOR)` + `requireApproved` | `201 OrderResponse` | checagem de vaga transacional p/ COURSE/SEMINAR |
 | GET | `/api/orders/me` | Bearer + `requireRole(DOCTOR)` + `requireApproved` | `200 OrderResponse[]` | — |
 
-### CRM (`/api/crm`) — funil de vendas (Fase 2)
-`FunnelStage` vive no `DoctorProfile` (não é entidade separada). Novo médico é auto-atribuído a um `SALES_REP` (menos leads no momento). Vendedor só decide leads/indicações dele; nunca vê financeiro.
+### CRM / Contatos (`/api/crm`) — funil de vendas (Fase 2, expandido Fase 4)
+`FunnelStage` vive no `DoctorProfile` (não é entidade separada): `NEW|FIRST_CONTACT|AWAITING_RESPONSE|INFO_RECEIVED|INTERESTED|PAYMENT_LINK_SENT|CUSTOMER|WITHDRAWN|LOST`.
+`LeadSource`: `INSTAGRAM|FACEBOOK|GOOGLE|LINKEDIN|SITE|INDICACAO|CONGRESSO|EVENTO|WHATSAPP_UNINGA|EX_ALUNO|OUTRO`.
+Novo médico é auto-atribuído a um `SALES_REP` (menos leads no momento). Vendedor só decide leads/indicações dele; nunca vê financeiro. Frontend chama essa área de **"Contatos"** (`/contatos`), não "Funil".
 | Método | Rota | Auth | Response | Descrição |
 |--------|------|------|----------|-----------|
-| GET | `/api/crm/leads?funnelStage=&scope=` | Bearer + `requireRole(SALES_REP,MANAGER,ADMIN)` | `200 LeadResponse[]` | scope forçado no servidor pra SALES_REP |
-| PATCH | `/api/crm/leads/:id/funnel` | idem | `200 LeadResponse` | `:id` = DoctorProfile.id |
+| GET | `/api/crm/leads?funnelStage=&scope=` | Bearer + `requireRole(SALES_REP,MANAGER,ADMIN)` | `200 LeadResponse[]` | scope forçado no servidor pra SALES_REP; inclui phone/profession/cpf/leadSource |
+| POST | `/api/crm/leads` | idem | `201 LeadResponse` | cadastro manual de contato (cria User+DoctorProfile, senha aleatória) |
+| PATCH | `/api/crm/leads/:id` | idem | `200 LeadResponse` | edita cadastro (não inclui nome/e-mail) |
+| PATCH | `/api/crm/leads/:id/funnel` | idem | `200 LeadResponse` | `:id` = DoctorProfile.id; lossReason salvo em LOST/WITHDRAWN |
 | PATCH | `/api/crm/leads/:id/claim` | idem | `200 LeadResponse` | assume lead sem vendedor |
 | PATCH | `/api/crm/leads/:id/request-review` | idem | `200 LeadResponse` | vendedor pede decisão a MANAGER/ADMIN (approvalStatus vira IN_REVIEW) |
+| GET/POST | `/api/crm/leads/:id/activities` | idem | `LeadActivityResponse[]` / `201` | histórico: CALL/WHATSAPP/EMAIL/NOTE/PAYMENT_METHOD |
+| GET/POST | `/api/crm/leads/:id/reminders` | idem | `LeadReminderResponse[]` / `201` | agenda/lembretes |
+| PATCH | `/api/crm/leads/:id/reminders/:reminderId` | idem | `200 LeadReminderResponse` | body `{done}` |
 
 ### Indicações (`/api/referrals`) — paciente ou médico
 Comissão é lançamento manual único (409 se repetir) que cria automaticamente uma saída no financeiro.
@@ -185,7 +192,7 @@ Códigos: `VALIDATION_ERROR`, `UNAUTHORIZED`, `INVALID_CREDENTIALS` (+ `details.
 `LEAD_NOT_FOUND`, `LEAD_ALREADY_ASSIGNED`, `REFERRAL_NOT_FOUND`,
 `COMMISSION_ALREADY_PAID`, `FINANCIAL_ENTRY_NOT_FOUND`,
 `ENROLLMENT_REQUIRED`, `COURSE_MATERIAL_NOT_FOUND`, `ARTICLE_NOT_FOUND`, `BANNER_NOT_FOUND`,
-`AMBASSADOR_APPLICATION_NOT_FOUND`,
+`AMBASSADOR_APPLICATION_NOT_FOUND`, `LEAD_REMINDER_NOT_FOUND`,
 `INTERNAL_ERROR`
 
 ---

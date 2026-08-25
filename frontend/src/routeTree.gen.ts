@@ -24,9 +24,9 @@ import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMedicosPendentesRouteImport } from './routes/_app.medicos-pendentes'
 import { Route as AppIndicacoesRouteImport } from './routes/_app.indicacoes'
-import { Route as AppFunilRouteImport } from './routes/_app.funil'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppContatosRouteImport } from './routes/_app.contatos'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
 import { Route as AppGestaoEmbaixadoresIndexRouteImport } from './routes/_app.gestao-embaixadores.index'
 import { Route as AppGestaoCursosIndexRouteImport } from './routes/_app.gestao-cursos.index'
@@ -122,11 +122,6 @@ const AppIndicacoesRoute = AppIndicacoesRouteImport.update({
   path: '/indicacoes',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFunilRoute = AppFunilRouteImport.update({
-  id: '/funil',
-  path: '/funil',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   id: '/financeiro',
   path: '/financeiro',
@@ -135,6 +130,11 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContatosRoute = AppContatosRouteImport.update({
+  id: '/contatos',
+  path: '/contatos',
   getParentRoute: () => AppRoute,
 } as any)
 const MedicoMedicoIndexRoute = MedicoMedicoIndexRouteImport.update({
@@ -255,9 +255,9 @@ export interface FileRoutesByFullPath {
   '/register': typeof RegisterRoute
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
+  '/contatos': typeof AppContatosRoute
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
-  '/funil': typeof AppFunilRoute
   '/indicacoes': typeof AppIndicacoesRoute
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -294,9 +294,9 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
+  '/contatos': typeof AppContatosRoute
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
-  '/funil': typeof AppFunilRoute
   '/indicacoes': typeof AppIndicacoesRoute
   '/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/notifications': typeof AppNotificationsRoute
@@ -336,9 +336,9 @@ export interface FileRoutesById {
   '/register': typeof RegisterRoute
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
+  '/_app/contatos': typeof AppContatosRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
-  '/_app/funil': typeof AppFunilRoute
   '/_app/indicacoes': typeof AppIndicacoesRoute
   '/_app/medicos-pendentes': typeof AppMedicosPendentesRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -377,9 +377,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/register-medico'
     | '/verificar-email'
+    | '/contatos'
     | '/dashboard'
     | '/financeiro'
-    | '/funil'
     | '/indicacoes'
     | '/medicos-pendentes'
     | '/notifications'
@@ -416,9 +416,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/register-medico'
     | '/verificar-email'
+    | '/contatos'
     | '/dashboard'
     | '/financeiro'
-    | '/funil'
     | '/indicacoes'
     | '/medicos-pendentes'
     | '/notifications'
@@ -457,9 +457,9 @@ export interface FileRouteTypes {
     | '/register'
     | '/register-medico'
     | '/verificar-email'
+    | '/_app/contatos'
     | '/_app/dashboard'
     | '/_app/financeiro'
-    | '/_app/funil'
     | '/_app/indicacoes'
     | '/_app/medicos-pendentes'
     | '/_app/notifications'
@@ -609,13 +609,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndicacoesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/funil': {
-      id: '/_app/funil'
-      path: '/funil'
-      fullPath: '/funil'
-      preLoaderRoute: typeof AppFunilRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/financeiro': {
       id: '/_app/financeiro'
       path: '/financeiro'
@@ -628,6 +621,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/contatos': {
+      id: '/_app/contatos'
+      path: '/contatos'
+      fullPath: '/contatos'
+      preLoaderRoute: typeof AppContatosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_medico/medico/': {
@@ -781,9 +781,9 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppContatosRoute: typeof AppContatosRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
-  AppFunilRoute: typeof AppFunilRoute
   AppIndicacoesRoute: typeof AppIndicacoesRoute
   AppMedicosPendentesRoute: typeof AppMedicosPendentesRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -801,9 +801,9 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppContatosRoute: AppContatosRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
-  AppFunilRoute: AppFunilRoute,
   AppIndicacoesRoute: AppIndicacoesRoute,
   AppMedicosPendentesRoute: AppMedicosPendentesRoute,
   AppNotificationsRoute: AppNotificationsRoute,

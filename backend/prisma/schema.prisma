@@ -43,6 +43,8 @@ model User {
   auditLogs           AuditLog[]
   financialEntries    FinancialEntry[]
   instructedCourses   CatalogItem[]    @relation("CourseInstructor")
+  leadActivities      LeadActivity[]   @relation("LeadActivityCreatedBy")
+  leadReminders       LeadReminder[]   @relation("LeadReminderCreatedBy")
 }
 
 enum ApprovalStatus {
@@ -56,15 +58,31 @@ enum FunnelStage {
   NEW
   FIRST_CONTACT
   AWAITING_RESPONSE
+  INFO_RECEIVED
   INTERESTED
   PAYMENT_LINK_SENT
   CUSTOMER
+  WITHDRAWN
   LOST
 }
 
 enum ReviewAction {
   APPROVE
   REJECT
+}
+
+enum LeadSource {
+  INSTAGRAM
+  FACEBOOK
+  GOOGLE
+  LINKEDIN
+  SITE
+  INDICACAO
+  CONGRESSO
+  EVENTO
+  WHATSAPP_UNINGA
+  EX_ALUNO
+  OUTRO
 }
 
 model DoctorProfile {
@@ -82,6 +100,11 @@ model DoctorProfile {
   rejectedAt       DateTime?
   rejectionReason  String?
 
+  // Cadastro completo do contato/lead (pedido do CRM: profissão, CPF, origem).
+  profession String?
+  cpf        String?
+  leadSource LeadSource?
+
   // Funil de vendas — mesma ideia do peptideo: o estágio vive direto no cadastro do médico.
   funnelStage           FunnelStage   @default(NEW)
   lossReason            String?
@@ -97,10 +120,52 @@ model DoctorProfile {
   assignedSalesRep User?    @relation("AssignedSalesRep", fields: [assignedSalesRepId], references: [id])
   orders          Order[]
   referrals       Referral[]
+  activities      LeadActivity[]
+  reminders       LeadReminder[]
 
   @@index([approvalStatus])
   @@index([funnelStage])
   @@index([assignedSalesRepId])
+}
+
+enum LeadActivityType {
+  CALL
+  WHATSAPP
+  EMAIL
+  NOTE
+  PAYMENT_METHOD
+}
+
+/// Histórico completo de contato com o lead — "tudo deve ficar registrado".
+model LeadActivity {
+  id              String           @id @default(cuid())
+  doctorProfileId String
+  type            LeadActivityType
+  note            String
+  createdByUserId String?
+  createdAt       DateTime         @default(now())
+
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  createdBy     User?         @relation("LeadActivityCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@index([doctorProfileId])
+}
+
+/// Agenda/lembrete do CRM — "ligar amanhã", "retornar em 7 dias", etc.
+model LeadReminder {
+  id              String    @id @default(cuid())
+  doctorProfileId String
+  label           String
+  dueAt           DateTime
+  done            Boolean   @default(false)
+  createdByUserId String?
+  createdAt       DateTime  @default(now())
+
+  doctorProfile DoctorProfile @relation(fields: [doctorProfileId], references: [id], onDelete: Cascade)
+  createdBy     User?         @relation("LeadReminderCreatedBy", fields: [createdByUserId], references: [id])
+
+  @@index([doctorProfileId])
+  @@index([dueAt])
 }
 
 enum ReferralType {

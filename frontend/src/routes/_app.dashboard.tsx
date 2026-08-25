@@ -157,7 +157,7 @@ function DashboardPage() {
               <StatCard label="Médicos aprovados" value={approvedDoctors.length} icon={<Stethoscope size={18} />} />
             )}
             <StatCard
-              label={isSalesRep ? "Meus leads" : "Leads no funil"}
+              label={isSalesRep ? "Meus contatos" : "Contatos no funil"}
               value={leads.length}
               sublabel={`${customerLeads} viraram cliente`}
               icon={<KanbanSquare size={18} />}
@@ -187,7 +187,7 @@ function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <QuickLink to="/funil" label="Funil" icon={<KanbanSquare size={16} />} />
+            <QuickLink to="/contatos" label="Contatos" icon={<KanbanSquare size={16} />} />
             <QuickLink to="/indicacoes" label="Indicações" icon={<Share2 size={16} />} />
             {isManager && <QuickLink to="/financeiro" label="Financeiro" icon={<Wallet size={16} />} />}
             {isManager && <QuickLink to="/catalogo" label="Catálogo" icon={<Package size={16} />} />}
