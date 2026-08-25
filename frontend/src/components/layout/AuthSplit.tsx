@@ -30,24 +30,26 @@ export function AuthSplit({
       </div>
 
       {/* Brand column */}
-      <div className="relative hidden border-l border-line bg-bg-elev md:flex md:flex-col md:justify-between md:p-14">
-        <div className="text-xs uppercase tracking-[0.2em] text-fg-muted">
+      <div className="relative hidden overflow-hidden border-l border-line md:flex md:flex-col md:justify-between md:p-14">
+        <img
+          src="/login-hero.webp"
+          alt="Treinamento prático da American Anatomy Institute"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-black/30" />
+        <div className="relative text-xs uppercase tracking-[0.2em] text-white/70">
           — Portal America Anatomy Institute
         </div>
-        <blockquote className="max-w-md">
-          <p className="font-display text-5xl leading-[1.05] text-fg">
+        <blockquote className="relative max-w-md">
+          <p className="font-display text-5xl leading-[1.05] text-white">
             {quote}
           </p>
-          <p className="mt-6 text-sm text-fg-muted">{caption}</p>
+          <p className="mt-6 text-sm text-white/70">{caption}</p>
         </blockquote>
-        <div className="flex items-center justify-between text-xs text-fg-muted">
-          <span>São Paulo · BR</span>
+        <div className="relative flex items-center justify-between text-xs text-white/70">
+          <span>Orlando, FL · EUA</span>
           <span className="font-mono">/ {String(new Date().getFullYear()).slice(-2)}</span>
         </div>
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 grid-bg opacity-60"
-        />
       </div>
     </div>
   );

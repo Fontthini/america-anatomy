@@ -8,8 +8,15 @@ import { Label } from "../components/ui/Label";
 import { Textarea } from "../components/ui/Textarea";
 import { Spinner } from "../components/ui/Spinner";
 import { AaiLogo } from "../components/ui/AaiLogo";
+import { RogerioWagnerLanding } from "../components/courses/RogerioWagnerLanding";
 import { apiGetPublicCourse, apiRegisterInterest } from "../lib/api/catalog";
 import { ApiError } from "../lib/api/client";
+
+// Teste de landing "cópia fiel" — isolado só neste curso, não afeta os outros 34
+// (ver [[project-scope]] / memória da Fase 5). Quando validado, decide se replica.
+const FAITHFUL_CLONE_SLUGS: Record<string, typeof RogerioWagnerLanding> = {
+  "anatomy-of-movement-course-orlando-fl": RogerioWagnerLanding,
+};
 
 export const Route = createFileRoute("/cursos/$slug")({
   head: () => ({ meta: [{ title: "Curso — America Anatomy Institute" }] }),
@@ -146,6 +153,16 @@ function RegisterForm({
 
 function PublicCoursePage() {
   const { slug } = Route.useParams();
+
+  const FaithfulClone = FAITHFUL_CLONE_SLUGS[slug];
+  if (FaithfulClone) {
+    return <FaithfulClone />;
+  }
+
+  return <GenericCoursePage slug={slug} />;
+}
+
+function GenericCoursePage({ slug }: { slug: string }) {
   const [submitted, setSubmitted] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

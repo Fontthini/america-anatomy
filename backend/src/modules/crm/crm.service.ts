@@ -189,12 +189,19 @@ export async function updateLead(actor: Actor, leadId: string, input: UpdateLead
 
 /**
  * Quando um lead entra em "matrícula concluída" e tem um curso de interesse marcado,
- * concede acesso ao portal automaticamente (cria o Order confirmado que já libera
- * materiais/"Meus Pedidos"), já que o pagamento em si acontece fora do sistema (manual)
- * e o CRM é quem representa "pago e matriculado".
+ * concede acesso ao portal automaticamente: aprova o cadastro do médico (sem isso ele
+ * não consegue nem logar em /medico) e cria o Order confirmado que libera materiais/
+ * "Meus Pedidos" daquele curso — já que o pagamento em si acontece fora do sistema
+ * (manual) e o CRM é quem representa "pago e matriculado", não uma etapa de aprovação
+ * separada como a de médicos que se cadastram sozinhos pelo formulário público.
  */
 async function grantCourseAccessOnEnrollment(doctorProfileId: string, courseId: string, userId: string): Promise<void> {
   try {
+    await prisma.doctorProfile.updateMany({
+      where: { id: doctorProfileId, approvalStatus: { not: "APPROVED" } },
+      data: { approvalStatus: "APPROVED", approvedAt: new Date() },
+    });
+
     const existingOrder = await prisma.order.findFirst({
       where: { doctorProfileId, catalogItemId: courseId, status: "CONFIRMED" },
     });
