@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { UserPlus, X, Phone, MessageCircle, Mail, StickyNote, CreditCard, Plus, Check } from "lucide-react";
+import { UserPlus, X, Phone, MessageCircle, Mail, StickyNote, CreditCard, Plus, Check, KeyRound, Copy } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
@@ -23,6 +23,7 @@ import {
   apiListLeadReminders,
   apiCreateLeadReminder,
   apiUpdateLeadReminder,
+  apiGetLeadPasswordLink,
   type FunnelStage,
   type LeadSource,
   type LeadActivityType,
@@ -129,6 +130,17 @@ function LeadDrawer({ lead, onClose }: { lead: LeadResponse; onClose: () => void
     onError: (err) => toast({ kind: "error", title: "Erro ao salvar", description: (err as Error).message }),
   });
 
+  const [passwordLink, setPasswordLink] = useState<string | null>(null);
+  const passwordLinkMutation = useMutation({
+    mutationFn: () => apiGetLeadPasswordLink(lead.id),
+    onSuccess: (url) => {
+      setPasswordLink(url);
+      void navigator.clipboard.writeText(url).catch(() => {});
+      toast({ kind: "success", title: "Link copiado", description: "Cole na conversa do WhatsApp com o contato." });
+    },
+    onError: (err) => toast({ kind: "error", title: "Erro ao gerar link", description: (err as Error).message }),
+  });
+
   const { data: activities = [] } = useQuery({
     queryKey: ["leadActivities", lead.id],
     queryFn: () => apiListLeadActivities(lead.id),
@@ -178,6 +190,31 @@ function LeadDrawer({ lead, onClose }: { lead: LeadResponse; onClose: () => void
           <button onClick={onClose} className="shrink-0 text-fg-muted hover:text-fg">
             <X size={18} />
           </button>
+        </div>
+
+        <div className="shrink-0 border-b border-line px-5 py-3">
+          <Button
+            size="sm"
+            variant="secondary"
+            className="w-full"
+            leftIcon={<KeyRound size={12} />}
+            loading={passwordLinkMutation.isPending}
+            onClick={() => passwordLinkMutation.mutate()}
+          >
+            Gerar link de senha (pra mandar no WhatsApp)
+          </Button>
+          {passwordLink && (
+            <div className="mt-2 flex items-center gap-1.5 rounded-md border border-line bg-surface-1 px-2 py-1.5">
+              <p className="flex-1 truncate text-[11px] text-fg-muted">{passwordLink}</p>
+              <button
+                onClick={() => void navigator.clipboard.writeText(passwordLink).catch(() => {})}
+                className="shrink-0 text-fg-muted hover:text-fg"
+                title="Copiar link"
+              >
+                <Copy size={12} />
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex shrink-0 gap-1 border-b border-line px-3 pt-2">

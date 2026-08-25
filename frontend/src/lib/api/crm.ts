@@ -144,6 +144,12 @@ export async function apiRequestLeadReview(id: string, action: "APPROVE" | "REJE
   });
 }
 
+/** GET /api/crm/leads/:id/password-link — gera link de "definir senha" pra mandar manualmente (WhatsApp etc.) */
+export async function apiGetLeadPasswordLink(id: string): Promise<string> {
+  const res = await apiFetch<{ url: string }>(`/api/crm/leads/${id}/password-link`);
+  return res.url;
+}
+
 // ---------------------------------------------------------------------------
 // Histórico completo (ligações, WhatsApp, e-mails, observações, pagamento)
 // ---------------------------------------------------------------------------

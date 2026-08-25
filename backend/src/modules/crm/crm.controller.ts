@@ -21,6 +21,7 @@ import {
   listLeadReminders,
   createLeadReminder,
   updateLeadReminder,
+  getPasswordSetupLink,
 } from "./crm.service.js";
 
 function actorFromReq(req: FastifyRequest) {
@@ -37,6 +38,12 @@ export async function handleCreateLead(req: FastifyRequest, reply: FastifyReply)
   const input = createLeadSchema.parse(req.body);
   const lead = await createLead(actorFromReq(req), input);
   reply.status(201).send(lead);
+}
+
+export async function handleGetPasswordSetupLink(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  const url = await getPasswordSetupLink(actorFromReq(req), id);
+  reply.status(200).send({ url });
 }
 
 export async function handleUpdateLead(req: FastifyRequest, reply: FastifyReply): Promise<void> {

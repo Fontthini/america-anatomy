@@ -3,6 +3,7 @@ import { AppError } from "../../middlewares/error-handler.js";
 import { createAuditLog } from "../../lib/audit-log.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
 import { hashPassword } from "../../lib/hash.js";
+import { createPasswordSetupLink } from "../auth/auth.service.js";
 import { recordAutoFinancialEntry } from "../finance/finance.service.js";
 import crypto from "node:crypto";
 import type {
@@ -410,6 +411,16 @@ async function assertLeadAccess(actor: Actor, leadId: string): Promise<DoctorPro
     throw new AppError(403, "FORBIDDEN", "Você só pode acessar leads atribuídos a você.");
   }
   return lead;
+}
+
+/**
+ * Contas nascidas de landing page/CRM não têm senha conhecida — o comercial usa
+ * isso pra gerar o link de "definir senha" e mandar manualmente pelo WhatsApp
+ * junto com a confirmação da matrícula (ver [[project-phase5-status]]).
+ */
+export async function getPasswordSetupLink(actor: Actor, leadId: string): Promise<string> {
+  const lead = await assertLeadAccess(actor, leadId);
+  return createPasswordSetupLink(lead.userId);
 }
 
 export async function listLeadActivities(actor: Actor, leadId: string): Promise<LeadActivityResponse[]> {

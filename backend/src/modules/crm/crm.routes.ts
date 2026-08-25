@@ -13,6 +13,7 @@ import {
   handleListLeadReminders,
   handleCreateLeadReminder,
   handleUpdateLeadReminder,
+  handleGetPasswordSetupLink,
 } from "./crm.controller.js";
 
 export async function crmRoutes(app: FastifyInstance): Promise<void> {
@@ -24,6 +25,11 @@ export async function crmRoutes(app: FastifyInstance): Promise<void> {
   app.patch("/api/crm/leads/:id/funnel", { preHandler: [authenticate, crmStaff] }, handleUpdateFunnelStage);
   app.patch("/api/crm/leads/:id/claim", { preHandler: [authenticate, crmStaff] }, handleClaimLead);
   app.patch("/api/crm/leads/:id/request-review", { preHandler: [authenticate, crmStaff] }, handleRequestReview);
+  app.get(
+    "/api/crm/leads/:id/password-link",
+    { preHandler: [authenticate, crmStaff] },
+    handleGetPasswordSetupLink,
+  );
 
   app.get("/api/crm/leads/:id/activities", { preHandler: [authenticate, crmStaff] }, handleListLeadActivities);
   app.post("/api/crm/leads/:id/activities", { preHandler: [authenticate, crmStaff] }, handleCreateLeadActivity);

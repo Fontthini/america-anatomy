@@ -30,6 +30,7 @@ import { randomUUID } from "crypto";
 
 const CONFIRM_EMAIL_TTL_MS = 15 * 60 * 1000;         // 15 min (OTP de curta duração)
 const RESET_PASSWORD_TTL_MS = 60 * 60 * 1000;        // 1h
+const ACCOUNT_SETUP_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias (link enviado manualmente pelo comercial via WhatsApp)
 const RESEND_COOLDOWN_MS = 60 * 1000;                // 1 min entre reenvios de OTP
 const FORGOT_PASSWORD_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24h entre solicitações de reset
 const PASSWORD_HISTORY_LIMIT = 5;                    // quantas senhas anteriores bloquear
@@ -263,6 +264,17 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<void> 
   const tpl = resetPasswordTemplate({ name: user.name, resetUrl: buildResetUrl(rawToken) });
   void sendEmail({ to: user.email, ...tpl });
   void createNotification(user.id, NotificationType.PASSWORD_RESET_REQUESTED);
+}
+
+/**
+ * Contas criadas a partir de landing page/CRM (`upsertLeadFromCourseInterest`)
+ * nascem com senha aleatória que ninguém nunca vê. Em vez de e-mail automático,
+ * o comercial gera esse link e manda manualmente pelo WhatsApp junto com a
+ * confirmação da matrícula — reusa o mesmo token/rota de "esqueci minha senha".
+ */
+export async function createPasswordSetupLink(userId: string): Promise<string> {
+  const rawToken = await createVerificationToken(userId, "RESET_PASSWORD", ACCOUNT_SETUP_TTL_MS);
+  return buildResetUrl(rawToken);
 }
 
 export async function resetPassword(input: ResetPasswordInput): Promise<void> {
