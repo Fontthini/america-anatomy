@@ -69,7 +69,7 @@ function CatalogManagementPage() {
     <PageContainer>
       <PageHeader
         eyebrow="CRM"
-        title="Catálogo"
+        title="Loja"
         description="Produtos, cursos e seminários — crie e publique itens pra Loja e Cursos do médico."
         action={
           <Link to="/catalogo/novo">

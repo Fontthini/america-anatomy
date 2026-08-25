@@ -18,7 +18,6 @@ import {
   apiUpdateLead,
   apiUpdateFunnelStage,
   apiClaimLead,
-  apiRequestLeadReview,
   apiListLeadActivities,
   apiCreateLeadActivity,
   apiListLeadReminders,
@@ -548,15 +547,6 @@ function LeadCard({ lead, onOpen }: { lead: LeadResponse; onOpen: () => void }) 
     onError: (err) => toast({ kind: "error", title: "Erro ao assumir lead", description: (err as Error).message }),
   });
 
-  const reviewMutation = useMutation({
-    mutationFn: (action: "APPROVE" | "REJECT") => apiRequestLeadReview(lead.id, action),
-    onSuccess: () => {
-      invalidate();
-      toast({ kind: "success", title: "Solicitação enviada", description: "O gerente vai decidir." });
-    },
-    onError: (err) => toast({ kind: "error", title: "Erro ao solicitar", description: (err as Error).message }),
-  });
-
   function handleStageChange(value: FunnelStage) {
     if (value === "LOST" || value === "WITHDRAWN") {
       setPendingStage(value);
@@ -622,17 +612,6 @@ function LeadCard({ lead, onOpen }: { lead: LeadResponse; onOpen: () => void }) 
           <Button size="sm" variant="secondary" className="w-full" leftIcon={<UserPlus size={12} />} onClick={() => claimMutation.mutate()}>
             Assumir
           </Button>
-        )}
-
-        {lead.approvalStatus === "PENDING" && (
-          <div className="flex gap-1.5">
-            <Button size="sm" variant="secondary" className="flex-1" onClick={() => reviewMutation.mutate("APPROVE")}>
-              Solicitar aprovação
-            </Button>
-            <Button size="sm" variant="secondary" className="flex-1" onClick={() => reviewMutation.mutate("REJECT")}>
-              Solicitar rejeição
-            </Button>
-          </div>
         )}
       </CardBody>
     </Card>

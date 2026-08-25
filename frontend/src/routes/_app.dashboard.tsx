@@ -6,7 +6,6 @@ import {
   Wallet,
   Package,
   GraduationCap,
-  UserCheck,
   TrendingUp,
   TrendingDown,
   Stethoscope,
@@ -16,7 +15,6 @@ import {
 } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
-import { Badge } from "../components/ui/Badge";
 import { useAuth } from "../contexts/AuthContext";
 import { apiListLeads } from "../lib/api/crm";
 import { apiGetFinancialSummary } from "../lib/api/finance";
@@ -100,16 +98,6 @@ function DashboardPage() {
     queryFn: () => apiListCatalogItems(),
   });
 
-  const { data: pendingDoctors = [] } = useQuery({
-    queryKey: ["doctors", "PENDING"],
-    queryFn: () => apiListDoctors("PENDING"),
-    enabled: isManager,
-  });
-  const { data: inReviewDoctors = [] } = useQuery({
-    queryKey: ["doctors", "IN_REVIEW"],
-    queryFn: () => apiListDoctors("IN_REVIEW"),
-    enabled: isManager,
-  });
   const { data: approvedDoctors = [] } = useQuery({
     queryKey: ["doctors", "APPROVED"],
     queryFn: () => apiListDoctors("APPROVED"),
@@ -135,14 +123,6 @@ function DashboardPage() {
       ) : (
         <>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {isManager && (
-              <StatCard
-                label="Aguardando decisão"
-                value={pendingDoctors.length + inReviewDoctors.length}
-                sublabel={inReviewDoctors.length > 0 ? `${inReviewDoctors.length} em análise` : "Novos cadastros"}
-                icon={<UserCheck size={18} />}
-              />
-            )}
             {isManager && (
               <StatCard label="Médicos aprovados" value={approvedDoctors.length} icon={<Stethoscope size={18} />} />
             )}
@@ -173,37 +153,11 @@ function DashboardPage() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <QuickLink to="/contatos" label="Contatos" icon={<KanbanSquare size={16} />} />
             {isManager && <QuickLink to="/financeiro" label="Financeiro" icon={<Wallet size={16} />} />}
-            {isManager && <QuickLink to="/catalogo" label="Catálogo" icon={<Package size={16} />} />}
+            {isManager && <QuickLink to="/catalogo" label="Loja" icon={<Package size={16} />} />}
             {isManager && <QuickLink to="/gestao-cursos" label="Gestão de Cursos" icon={<GraduationCap size={16} />} />}
             {isManager && <QuickLink to="/blog" label="Blog" icon={<Newspaper size={16} />} />}
             {isManager && <QuickLink to="/banners" label="Banners" icon={<Image size={16} />} />}
-            {isManager && (
-              <QuickLink to="/medicos-pendentes" label="Médicos Pendentes" icon={<UserCheck size={16} />} />
-            )}
           </div>
-
-          {isManager && (pendingDoctors.length > 0 || inReviewDoctors.length > 0) && (
-            <div>
-              <h2 className="mb-3 text-sm font-medium text-fg">Precisa da sua decisão</h2>
-              <div className="space-y-2">
-                {[...inReviewDoctors, ...pendingDoctors].slice(0, 5).map((doctor) => (
-                  <Link key={doctor.id} to="/medicos-pendentes">
-                    <Card className="transition-colors hover:border-line-strong">
-                      <CardBody className="flex items-center justify-between gap-4">
-                        <div>
-                          <p className="text-sm text-fg">{doctor.name}</p>
-                          <p className="text-xs text-fg-muted">{doctor.email}</p>
-                        </div>
-                        <Badge tone={doctor.approvalStatus === "IN_REVIEW" ? "warn" : "muted"}>
-                          {doctor.approvalStatus === "IN_REVIEW" ? "Revisão solicitada" : "Pendente"}
-                        </Badge>
-                      </CardBody>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
         </>
       )}
     </PageContainer>
