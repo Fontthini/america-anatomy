@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   Calendar,
   MapPin,
@@ -11,28 +12,25 @@ import {
   Instagram,
 } from "lucide-react";
 import { AaiLogo } from "../ui/AaiLogo";
+import { Spinner } from "../ui/Spinner";
+import { CourseRegisterForm } from "./RegisterForm";
+import { apiGetPublicCourse } from "../../lib/api/catalog";
 
-const WHATSAPP_MESSAGE =
-  'Olá! Tenho interesse no curso internacional em Orlando, ministrado pelo Prof. Dr. Rogério Wagner. Gostaria de mais informações, por favor.';
-
-function waLink(number: string): string {
-  return `https://wa.me/${number}?text=${encodeURIComponent(WHATSAPP_MESSAGE)}`;
-}
+// Slug fixo deste teste piloto — ver FAITHFUL_CLONE_SLUGS em cursos.$slug.tsx.
+const SLUG = "anatomy-of-movement-course-orlando-fl";
 
 const CEO_WHATSAPP = "17543998757";
 const MANAGER_WHATSAPP = "5511948348791";
 
-function SecureSpotButton({ className = "" }: { className?: string }) {
-  return (
-    <a
-      href={waLink(CEO_WHATSAPP)}
-      target="_blank"
-      rel="noreferrer"
-      className={`inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-fg transition hover:brightness-95 ${className}`}
-    >
-      <MessageCircle size={16} /> Garantir minha vaga
-    </a>
+function directWaLink(number: string): string {
+  return waMessageLink(
+    number,
+    'Olá! Tenho interesse no curso internacional em Orlando, ministrado pelo Prof. Dr. Rogério Wagner. Gostaria de mais informações, por favor.',
   );
+}
+
+function waMessageLink(number: string, message: string): string {
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
 const schedule = [
@@ -87,6 +85,12 @@ const faq = [
 ];
 
 export function RogerioWagnerLanding() {
+  const { data: course, isLoading } = useQuery({
+    queryKey: ["publicCourse", SLUG],
+    queryFn: () => apiGetPublicCourse(SLUG),
+    retry: false,
+  });
+
   return (
     <div className="brand-medico dark min-h-screen bg-bg">
       <header className="border-b border-line px-6 py-4">
@@ -129,13 +133,37 @@ export function RogerioWagnerLanding() {
           <p className="mt-1 text-xs text-white/60">Parcelamento sem juros em até 12x — consulte condições</p>
 
           <div className="mt-6">
-            <SecureSpotButton />
+            <a
+              href="#garantir-vaga"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-fg transition hover:brightness-95"
+            >
+              Garantir minha vaga
+            </a>
           </div>
         </div>
       </section>
 
+      {/* Formulário — entrada real no funil do CRM */}
+      <section id="garantir-vaga" className="mx-auto max-w-3xl px-4 py-12">
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size={24} />
+          </div>
+        ) : course ? (
+          <CourseRegisterForm courseId={course.id} courseTitle={course.title} />
+        ) : (
+          <p className="text-center text-sm text-fg-muted">
+            Não foi possível carregar o formulário agora. Fale com a gente pelo WhatsApp: {" "}
+            <a href={directWaLink(CEO_WHATSAPP)} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+              clique aqui
+            </a>
+            .
+          </p>
+        )}
+      </section>
+
       {/* Instrutor */}
-      <section className="mx-auto max-w-3xl px-4 py-12">
+      <section className="mx-auto max-w-3xl px-4 py-4">
         <div className="rounded-2xl border border-line bg-surface-1 p-6 sm:p-8">
           <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
             <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-accent-soft text-accent">
@@ -222,10 +250,15 @@ export function RogerioWagnerLanding() {
         <div className="rounded-2xl border border-line-strong bg-surface-1 p-6 text-center sm:p-8">
           <h2 className="font-display text-2xl text-fg">Vagas limitadas pra essa turma</h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-fg-muted">
-            Fale com a equipe AAI agora pelo WhatsApp e garanta sua vaga no Anatomy of Movement Course.
+            Preencha o formulário acima ou fale direto com a equipe AAI pelo WhatsApp.
           </p>
           <div className="mt-6 flex flex-col items-center gap-3">
-            <SecureSpotButton />
+            <a
+              href="#garantir-vaga"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-fg transition hover:brightness-95"
+            >
+              <MessageCircle size={16} /> Preencher formulário
+            </a>
             <a
               href="https://instagram.com/american.anatomy"
               target="_blank"
@@ -238,7 +271,7 @@ export function RogerioWagnerLanding() {
 
           <div className="mt-8 grid grid-cols-1 gap-3 border-t border-line pt-6 text-left sm:grid-cols-2">
             <a
-              href={waLink(CEO_WHATSAPP)}
+              href={directWaLink(CEO_WHATSAPP)}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-between rounded-lg border border-line px-4 py-3 text-sm hover:border-accent/40"
@@ -250,7 +283,7 @@ export function RogerioWagnerLanding() {
               <MessageCircle size={16} className="text-accent" />
             </a>
             <a
-              href={waLink(MANAGER_WHATSAPP)}
+              href={directWaLink(MANAGER_WHATSAPP)}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-between rounded-lg border border-line px-4 py-3 text-sm hover:border-accent/40"
