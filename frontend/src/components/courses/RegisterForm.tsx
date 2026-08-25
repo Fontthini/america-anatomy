@@ -37,7 +37,7 @@ export function CourseRegisterForm({ courseId, courseTitle }: { courseId: string
         name,
         email,
         whatsapp,
-        ...(crm ? { crm } : {}),
+        crm,
         ...(notes ? { notes } : {}),
       }),
     onSuccess: () => {
@@ -91,8 +91,8 @@ export function CourseRegisterForm({ courseId, courseTitle }: { courseId: string
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="reg-crm">CRM (opcional)</Label>
-                <Input id="reg-crm" value={crm} onChange={(e) => setCrm(e.target.value)} />
+                <Label htmlFor="reg-crm">CRM ou outro registro profissional</Label>
+                <Input id="reg-crm" value={crm} onChange={(e) => setCrm(e.target.value)} required />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="reg-whatsapp">WhatsApp</Label>

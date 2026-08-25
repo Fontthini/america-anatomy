@@ -1,7 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
-import { upsertLeadFromCourseInterest } from "../crm/crm.service.js";
+import { upsertLeadFromCourseInterest, expressCourseInterestAsExistingDoctor } from "../crm/crm.service.js";
 import type {
   CreateCatalogItemInput,
   UpdateCatalogItemInput,
@@ -251,6 +251,21 @@ export async function createCourseRegistration(
   });
 
   return toCourseRegistrationResponse(registration);
+}
+
+/**
+ * Médico já logado demonstra interesse num curso que ainda não comprou, pela
+ * "mini landing page" dentro do próprio portal (`/medico/cursos/:id`). Não
+ * cria pedido — só marca o curso de interesse no contato dele no CRM e
+ * registra no histórico, pro comercial fechar a matrícula manualmente.
+ */
+export async function expressCourseInterestAsDoctor(catalogItemId: string, userId: string): Promise<void> {
+  const item = await findEventItemOrThrow(catalogItemId);
+  const profile = await prisma.doctorProfile.findUnique({ where: { userId }, select: { id: true } });
+  if (!profile) {
+    throw new AppError(404, "DOCTOR_PROFILE_NOT_FOUND", "Perfil de médico não encontrado.");
+  }
+  await expressCourseInterestAsExistingDoctor(profile.id, item.id, item.title);
 }
 
 export async function listCourseRegistrations(

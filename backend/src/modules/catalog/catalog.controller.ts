@@ -24,6 +24,7 @@ import {
   updateCourseMaterial,
   deleteCourseMaterial,
   listMyInstructedCourses,
+  expressCourseInterestAsDoctor,
 } from "./catalog.service.js";
 
 function isStaffOrAdmin(req: FastifyRequest): boolean {
@@ -72,6 +73,12 @@ export async function handleCreateCourseRegistration(req: FastifyRequest, reply:
   const input = registerInterestSchema.parse(req.body);
   const registration = await createCourseRegistration(id, input);
   reply.status(201).send(registration);
+}
+
+export async function handleExpressCourseInterest(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  await expressCourseInterestAsDoctor(id, req.user.id);
+  reply.status(204).send();
 }
 
 export async function handleListCourseRegistrations(req: FastifyRequest, reply: FastifyReply): Promise<void> {

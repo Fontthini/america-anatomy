@@ -1,13 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Calendar, MapPin, Lock, PlayCircle, FileText, Link as LinkIcon } from "lucide-react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { ArrowLeft, Calendar, MapPin, Lock, PlayCircle, FileText, Link as LinkIcon, CheckCircle } from "lucide-react";
 import { PageContainer } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../contexts/ToastContext";
-import { apiGetCatalogItem, apiListCourseMaterials, type CourseMaterialType } from "../lib/api/catalog";
-import { apiCreateOrder } from "../lib/api/orders";
+import {
+  apiGetCatalogItem,
+  apiListCourseMaterials,
+  apiExpressCourseInterest,
+  type CourseMaterialType,
+} from "../lib/api/catalog";
 import { ApiError } from "../lib/api/client";
 
 const materialIcons: Record<CourseMaterialType, typeof PlayCircle> = {
@@ -34,9 +39,8 @@ function formatDateTime(iso: string | null): string | null {
 
 function CourseItemPage() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [interestSent, setInterestSent] = useState(false);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ["catalog", id],
@@ -46,31 +50,23 @@ function CourseItemPage() {
   const {
     data: materials,
     error: materialsError,
+    isLoading: materialsLoading,
   } = useQuery({
     queryKey: ["courseMaterials", id],
     queryFn: () => apiListCourseMaterials(id),
     retry: false,
   });
   const enrollmentRequired = materialsError instanceof ApiError && materialsError.code === "ENROLLMENT_REQUIRED";
+  const enrolled = !materialsLoading && !enrollmentRequired;
 
-  const orderMutation = useMutation({
-    mutationFn: () => apiCreateOrder(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["myOrders"] });
-      void queryClient.invalidateQueries({ queryKey: ["catalog"] });
-      toast({ kind: "success", title: "Inscrição confirmada", description: "Você já pode ver os detalhes em Meus Pedidos." });
-      void navigate({ to: "/medico/pedidos" });
-    },
-    onError: (err) => {
-      const message =
-        err instanceof ApiError && (err.code === "SEMINAR_FULL" || err.code === "COURSE_FULL")
-          ? "Não há mais vagas disponíveis."
-          : (err as Error).message;
-      toast({ kind: "error", title: "Não foi possível concluir", description: message });
-    },
+  const interestMutation = useMutation({
+    mutationFn: () => apiExpressCourseInterest(id),
+    onSuccess: () => setInterestSent(true),
+    onError: (err) =>
+      toast({ kind: "error", title: "Não foi possível registrar", description: (err as Error).message }),
   });
 
-  if (isLoading) {
+  if (isLoading || materialsLoading) {
     return (
       <PageContainer>
         <p className="text-sm text-fg-muted">Carregando…</p>
@@ -94,7 +90,10 @@ function CourseItemPage() {
 
       <Card>
         <CardBody className="space-y-5">
-          <Badge tone="accent">{typeLabels[item.type]}</Badge>
+          <div className="flex items-center gap-2">
+            <Badge tone="accent">{typeLabels[item.type]}</Badge>
+            {enrolled && <Badge tone="accent">Você está inscrito</Badge>}
+          </div>
 
           <div>
             <h1 className="font-display text-3xl text-fg">{item.title}</h1>
@@ -114,45 +113,75 @@ function CourseItemPage() {
             )}
           </div>
 
-          <div className="flex items-center justify-between border-t border-line pt-5">
-            <span className="font-display text-2xl text-fg">{formatPrice(item.price)}</span>
-            <Button onClick={() => orderMutation.mutate()} loading={orderMutation.isPending}>
-              Inscrever-se
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
-
-      <Card>
-        <CardBody className="space-y-3">
-          <h2 className="font-display text-lg text-fg">Materiais do curso</h2>
-          {enrollmentRequired ? (
-            <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-fg-muted">
-              <Lock size={16} className="shrink-0" />
-              Inscreva-se neste curso para desbloquear vídeos e materiais.
+          {!enrolled && (
+            <div className="flex items-center justify-between border-t border-line pt-5">
+              <span className="font-display text-2xl text-fg">{formatPrice(item.price)}</span>
+              {interestSent ? (
+                <span className="flex items-center gap-2 text-sm text-success">
+                  <CheckCircle size={16} /> Interesse registrado
+                </span>
+              ) : (
+                <Button onClick={() => interestMutation.mutate()} loading={interestMutation.isPending}>
+                  Quero me inscrever
+                </Button>
+              )}
             </div>
-          ) : materials && materials.length > 0 ? (
-            <div className="space-y-1.5">
-              {materials.map((m) => {
-                const Icon = materialIcons[m.type];
-                return (
-                  <a
-                    key={m.id}
-                    href={m.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-fg hover:border-accent/40 hover:text-accent"
-                  >
-                    <Icon size={14} /> {m.title}
-                  </a>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-fg-muted">Nenhum material disponível ainda.</p>
           )}
         </CardBody>
       </Card>
+
+      {!enrolled ? (
+        <Card>
+          <CardBody className="space-y-2">
+            {interestSent ? (
+              <>
+                <h2 className="font-display text-lg text-fg">Interesse registrado!</h2>
+                <p className="text-sm text-fg-muted">
+                  Nossa equipe comercial já foi avisada e vai entrar em contato pra fechar sua matrícula nesse curso.
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="font-display text-lg text-fg">Como funciona</h2>
+                <p className="text-sm text-fg-muted">
+                  Clique em "Quero me inscrever" pra avisar a equipe comercial do seu interesse — eles entram em
+                  contato pra fechar sua matrícula. Assim que confirmada, esse curso é liberado aqui automaticamente
+                  com todo o conteúdo de onboarding.
+                </p>
+              </>
+            )}
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardBody className="space-y-3">
+            <h2 className="font-display text-lg text-fg">Materiais do curso</h2>
+            {materials && materials.length > 0 ? (
+              <div className="space-y-1.5">
+                {materials.map((m) => {
+                  const Icon = materialIcons[m.type];
+                  return (
+                    <a
+                      key={m.id}
+                      href={m.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-line px-3 py-2 text-sm text-fg hover:border-accent/40 hover:text-accent"
+                    >
+                      <Icon size={14} /> {m.title}
+                    </a>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 rounded-lg border border-line bg-surface-2 px-4 py-3 text-sm text-fg-muted">
+                <Lock size={16} className="shrink-0" />
+                Nenhum material disponível ainda — a equipe AAI está preparando o conteúdo de onboarding.
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
     </PageContainer>
   );
 }

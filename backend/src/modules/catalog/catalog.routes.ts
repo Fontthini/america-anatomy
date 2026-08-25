@@ -18,6 +18,7 @@ import {
   handleUpdateCourseMaterial,
   handleDeleteCourseMaterial,
   handleListMyInstructedCourses,
+  handleExpressCourseInterest,
 } from "./catalog.controller.js";
 
 export async function catalogRoutes(app: FastifyInstance): Promise<void> {
@@ -43,6 +44,14 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
   // Página pública do curso — sem login, médico parceiro sem conta demonstra interesse.
   app.get("/api/catalog/public/:slug", handleGetPublicCourse);
   app.post("/api/catalog/:id/register-interest", handleCreateCourseRegistration);
+
+  // Médico já logado demonstra interesse num curso que ainda não comprou (mini
+  // landing dentro do portal) — marca o curso no CRM, não cria pedido.
+  app.post(
+    "/api/catalog/:id/express-interest",
+    { preHandler: [authenticate, requireApproved] },
+    handleExpressCourseInterest,
+  );
 
   // Cursos onde o médico logado é o instrutor responsável — "Painel do Instrutor".
   app.get(

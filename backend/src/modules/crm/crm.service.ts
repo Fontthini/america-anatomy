@@ -371,6 +371,32 @@ export async function upsertLeadFromCourseInterest(
   }
 }
 
+/**
+ * Médico já logado (perfil já existe) demonstra interesse num curso que ainda
+ * não comprou — pela "mini landing page" dentro do próprio portal. Diferente
+ * de `upsertLeadFromCourseInterest` (público, pode criar conta nova), aqui só
+ * atualiza o contato que já existe: marca o curso de interesse e registra no
+ * histórico, sem criar pedido nenhum — a matrícula em si continua manual, via
+ * CRM (Contatos → Matrícula Concluída), igual o caminho da landing pública.
+ */
+export async function expressCourseInterestAsExistingDoctor(
+  doctorProfileId: string,
+  catalogItemId: string,
+  courseTitle: string,
+): Promise<void> {
+  await prisma.doctorProfile.update({
+    where: { id: doctorProfileId },
+    data: { courseOfInterestId: catalogItemId },
+  });
+  await prisma.leadActivity.create({
+    data: {
+      doctorProfileId,
+      type: "NOTE",
+      note: `Demonstrou interesse por um novo curso pelo portal: ${courseTitle}.`,
+    },
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Histórico completo (ligações, WhatsApp, e-mails, observações, pagamento)
 // ---------------------------------------------------------------------------

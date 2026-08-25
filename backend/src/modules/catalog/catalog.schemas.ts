@@ -85,7 +85,7 @@ export type CatalogItemResponse = {
 export const registerInterestSchema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres.").max(150),
   email: z.string().email("E-mail inválido."),
-  crm: z.string().max(30).optional(),
+  crm: z.string().min(2, "Informe seu CRM ou outro registro profissional.").max(30),
   whatsapp: z.string().min(8, "WhatsApp inválido.").max(30),
   notes: z.string().max(500).optional(),
 });

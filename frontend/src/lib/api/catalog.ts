@@ -149,13 +149,18 @@ export async function apiGetPublicCourse(slug: string): Promise<PublicCatalogIte
 /** POST /api/catalog/:id/register-interest — sem login */
 export async function apiRegisterInterest(
   catalogItemId: string,
-  payload: { name: string; email: string; crm?: string; whatsapp: string; notes?: string },
+  payload: { name: string; email: string; crm: string; whatsapp: string; notes?: string },
 ): Promise<CourseRegistrationResponse> {
   return apiFetch<CourseRegistrationResponse>(`/api/catalog/${catalogItemId}/register-interest`, {
     method: "POST",
     body: JSON.stringify(payload),
     skipAuth: true,
   });
+}
+
+/** POST /api/catalog/:id/express-interest — médico já logado, curso que ainda não comprou */
+export async function apiExpressCourseInterest(catalogItemId: string): Promise<void> {
+  await apiFetch<void>(`/api/catalog/${catalogItemId}/express-interest`, { method: "POST" });
 }
 
 /** GET /api/catalog/:id/registrations — staff */
