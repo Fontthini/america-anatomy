@@ -77,6 +77,20 @@ export async function createOrder(userId: string, input: CreateOrderInput): Prom
     data: { funnelStage: "CUSTOMER" },
   });
 
+  // Visibilidade pro comercial: pedido feito direto pelo médico (Loja/Cursos) não
+  // passa pelo funil manual do CRM, então registra no histórico do contato pra
+  // quem for fechar/cobrar saber o que foi pedido sem precisar cruzar telas.
+  void prisma.leadActivity
+    .create({
+      data: {
+        doctorProfileId,
+        type: "NOTE",
+        note: `Pedido feito pelo médico via portal: ${order.quantity}x ${order.catalogItem.title}.`,
+        createdByUserId: null,
+      },
+    })
+    .catch((err) => console.error("[orders] Falha ao registrar atividade no CRM:", err));
+
   return toOrderResponse(order);
 }
 
