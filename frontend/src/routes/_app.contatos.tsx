@@ -555,8 +555,11 @@ function LeadCard({ lead, onOpen }: { lead: LeadResponse; onOpen: () => void }) 
             {[lead.profession, lead.specialty, lead.city].filter(Boolean).join(" · ")}
           </p>
         )}
-        {lead.leadSource && (
-          <Badge tone="muted">{sourceLabel(lead.leadSource)}</Badge>
+        {(lead.leadSource || lead.courseOfInterestTitle) && (
+          <div className="flex flex-wrap gap-1.5">
+            {lead.courseOfInterestTitle && <Badge tone="accent">{lead.courseOfInterestTitle}</Badge>}
+            {lead.leadSource && <Badge tone="muted">{sourceLabel(lead.leadSource)}</Badge>}
+          </div>
         )}
 
         <select

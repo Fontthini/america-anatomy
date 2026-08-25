@@ -6,7 +6,6 @@ import {
   Package2,
   Share2,
   Newspaper,
-  Presentation,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
@@ -24,7 +23,6 @@ const items: Item[] = [
   { to: "/medico/blog", label: "Blog", icon: Newspaper },
   { to: "/medico/pedidos", label: "Meus Pedidos", icon: Package2 },
   { to: "/medico/indicar", label: "Indicar", icon: Share2 },
-  { to: "/medico/painel-instrutor", label: "Painel do Instrutor", icon: Presentation },
 ];
 
 export function MedicoSidebar({

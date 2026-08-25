@@ -14,7 +14,6 @@ import {
   ArrowRight,
   Newspaper,
   Image,
-  Megaphone,
 } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
@@ -194,7 +193,6 @@ function DashboardPage() {
             {isManager && <QuickLink to="/gestao-cursos" label="Gestão de Cursos" icon={<GraduationCap size={16} />} />}
             {isManager && <QuickLink to="/blog" label="Blog" icon={<Newspaper size={16} />} />}
             {isManager && <QuickLink to="/banners" label="Banners" icon={<Image size={16} />} />}
-            {isManager && <QuickLink to="/gestao-embaixadores" label="Embaixadores" icon={<Megaphone size={16} />} />}
             {isManager && (
               <QuickLink to="/medicos-pendentes" label="Médicos Pendentes" icon={<UserCheck size={16} />} />
             )}

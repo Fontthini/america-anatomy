@@ -102,10 +102,10 @@ Auth: — | Response `200`: `{ status: "ok", timestamp: string }`
 Novo médico é auto-atribuído a um `SALES_REP` (menos leads no momento). Vendedor só decide leads/indicações dele; nunca vê financeiro. Frontend chama essa área de **"Contatos"** (`/contatos`), não "Funil".
 | Método | Rota | Auth | Response | Descrição |
 |--------|------|------|----------|-----------|
-| GET | `/api/crm/leads?funnelStage=&scope=` | Bearer + `requireRole(SALES_REP,MANAGER,ADMIN)` | `200 LeadResponse[]` | scope forçado no servidor pra SALES_REP; inclui phone/profession/cpf/leadSource |
+| GET | `/api/crm/leads?funnelStage=&scope=&courseOfInterestId=` | Bearer + `requireRole(SALES_REP,MANAGER,ADMIN)` | `200 LeadResponse[]` | scope forçado no servidor pra SALES_REP; inclui phone/profession/cpf/leadSource/courseOfInterestId |
 | POST | `/api/crm/leads` | idem | `201 LeadResponse` | cadastro manual de contato (cria User+DoctorProfile, senha aleatória) |
 | PATCH | `/api/crm/leads/:id` | idem | `200 LeadResponse` | edita cadastro (não inclui nome/e-mail) |
-| PATCH | `/api/crm/leads/:id/funnel` | idem | `200 LeadResponse` | `:id` = DoctorProfile.id; lossReason salvo em LOST/WITHDRAWN |
+| PATCH | `/api/crm/leads/:id/funnel` | idem | `200 LeadResponse` | `:id` = DoctorProfile.id; lossReason salvo em LOST/WITHDRAWN; CUSTOMER+courseOfInterestId cria Order confirmado automático (matrícula) |
 | PATCH | `/api/crm/leads/:id/claim` | idem | `200 LeadResponse` | assume lead sem vendedor |
 | PATCH | `/api/crm/leads/:id/request-review` | idem | `200 LeadResponse` | vendedor pede decisão a MANAGER/ADMIN (approvalStatus vira IN_REVIEW) |
 | GET/POST | `/api/crm/leads/:id/activities` | idem | `LeadActivityResponse[]` / `201` | histórico: CALL/WHATSAPP/EMAIL/NOTE/PAYMENT_METHOD |
@@ -129,7 +129,7 @@ no service (`assertCourseAccess`), não no middleware de rota.
 | Método | Rota | Auth | Response |
 |--------|------|------|----------|
 | GET | `/api/catalog/public/:slug` | — | `200 PublicCatalogItemResponse` (só PUBLISHED COURSE/SEMINAR) |
-| POST | `/api/catalog/:id/register-interest` | — | `201 CourseRegistrationResponse` |
+| POST | `/api/catalog/:id/register-interest` | — | `201 CourseRegistrationResponse` | também chama `upsertLeadFromCourseInterest` (crm.service) — cria/atualiza contato real no funil com courseOfInterestId |
 | GET | `/api/catalog/instructor/mine` | Bearer + `requireApproved` | `200 CatalogItemResponse[]` — cursos onde o médico logado é instrutor |
 | GET | `/api/catalog/:id/registrations` | Bearer + `requireApproved` | `200 CourseRegistrationResponse[]` — staff ou instrutor |
 | PATCH | `/api/catalog/:id/registrations/:regId` | idem | `200 CourseRegistrationResponse` — body `{status}` |

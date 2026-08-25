@@ -45,6 +45,8 @@ export type LeadResponse = {
   city: string | null;
   state: string | null;
   leadSource: LeadSource | null;
+  courseOfInterestId: string | null;
+  courseOfInterestTitle: string | null;
   approvalStatus: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
   funnelStage: FunnelStage;
   lossReason: string | null;
@@ -91,14 +93,16 @@ export type CreateLeadPayload = {
 
 export type UpdateLeadPayload = Partial<Omit<CreateLeadPayload, "name" | "email">>;
 
-/** GET /api/crm/leads?funnelStage=&scope= */
+/** GET /api/crm/leads?funnelStage=&scope=&courseOfInterestId= */
 export async function apiListLeads(filters?: {
   funnelStage?: FunnelStage;
   scope?: "mine" | "unassigned" | "all";
+  courseOfInterestId?: string;
 }): Promise<LeadResponse[]> {
   const params = new URLSearchParams();
   if (filters?.funnelStage) params.set("funnelStage", filters.funnelStage);
   if (filters?.scope) params.set("scope", filters.scope);
+  if (filters?.courseOfInterestId) params.set("courseOfInterestId", filters.courseOfInterestId);
   const qs = params.toString();
   return apiFetch<LeadResponse[]>(`/api/crm/leads${qs ? `?${qs}` : ""}`);
 }

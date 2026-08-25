@@ -1,6 +1,7 @@
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
+import { upsertLeadFromCourseInterest } from "../crm/crm.service.js";
 import type {
   CreateCatalogItemInput,
   UpdateCatalogItemInput,
@@ -238,6 +239,16 @@ export async function createCourseRegistration(
   for (const member of staff) {
     void createNotification(member.id, NotificationType.NEW_COURSE_REGISTRATION);
   }
+
+  // O interesse também vira um contato de verdade no funil do CRM, com a "caixinha"
+  // do curso — pra quem vende saber de qual landing page/curso o contato veio.
+  await upsertLeadFromCourseInterest(item.id, item.title, {
+    name: input.name,
+    email: input.email,
+    whatsapp: input.whatsapp,
+    ...(input.crm ? { crm: input.crm } : {}),
+    ...(input.notes ? { notes: input.notes } : {}),
+  });
 
   return toCourseRegistrationResponse(registration);
 }

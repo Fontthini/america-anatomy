@@ -43,7 +43,6 @@ const items: Item[] = [
   { to: "/gestao-cursos", label: "Cursos", icon: GraduationCap, roles: ["MANAGER", "ADMIN"] },
   { to: "/blog", label: "Blog", icon: Newspaper, roles: ["MANAGER", "ADMIN"] },
   { to: "/banners", label: "Banners", icon: Image, roles: ["MANAGER", "ADMIN"] },
-  { to: "/gestao-embaixadores", label: "Embaixadores", icon: Megaphone, roles: ["MANAGER", "ADMIN"] },
   { to: "/medicos-pendentes", label: "Médicos Pendentes", icon: UserCheck, roles: ["MANAGER", "ADMIN"] },
   { to: "/dashboard", label: "Analytics", icon: BarChart3, disabled: true },
   { to: "/dashboard", label: "Projetos", icon: Layers, disabled: true },

@@ -708,6 +708,8 @@ Novo médico cadastrado (via `/register-medico`) é **atribuído automaticamente
   cpf: string | null;
   clinicName: string | null; city: string | null; state: string | null;
   leadSource: LeadSource | null;
+  courseOfInterestId: string | null;     // curso que trouxe o contato (landing page pública)
+  courseOfInterestTitle: string | null;
   approvalStatus: "PENDING" | "IN_REVIEW" | "APPROVED" | "REJECTED";
   funnelStage: FunnelStage;
   lossReason: string | null;     // salvo quando funnelStage é "LOST" ou "WITHDRAWN"
@@ -717,6 +719,10 @@ Novo médico cadastrado (via `/register-medico`) é **atribuído automaticamente
   createdAt: string;
 }[]
 ```
+
+`GET /api/crm/leads` também aceita `?courseOfInterestId=` pra filtrar só os contatos de um curso específico (usado em Gestão de Cursos pra contar "quantos interessados entraram" por landing page).
+
+**Matrícula automática:** quando `PATCH /api/crm/leads/:id/funnel` move um lead pra `funnelStage: "CUSTOMER"` e ele tem `courseOfInterestId` marcado, o sistema cria automaticamente um `Order` confirmado pra esse médico+curso (se ainda não existir) — isso já libera o acesso ao portal (materiais do curso, "Meus Pedidos") sem nenhum passo manual extra, e lança a entrada no financeiro (categoria `"MATRÍCULA (CRM)"`) se o curso tiver preço definido. Representa "paguei e matriculei fora do sistema, agora registro aqui" — o pagamento em si continua manual/fora do sistema.
 
 ---
 
@@ -926,7 +932,7 @@ Dados públicos do curso/seminário pra montar a página de divulgação. Só re
 
 ### `POST /api/catalog/:id/register-interest`
 
-Registra o interesse (não cria conta). `:id` é o `CatalogItem.id` do curso/seminário.
+Registra o interesse (não cria conta diretamente por aqui — ver nota abaixo). `:id` é o `CatalogItem.id` do curso/seminário.
 
 **Auth:** nenhuma
 
@@ -936,6 +942,8 @@ Registra o interesse (não cria conta). `:id` é o `CatalogItem.id` do curso/sem
 ```
 
 **Response `201`:** `CourseRegistrationResponse` — `{ id, catalogItemId, name, email, crm, whatsapp, notes, status, createdAt }`
+
+**Efeito colateral (Fase 5):** além de salvar o `CourseRegistration` (roster leve, sem conta), este endpoint também chama `upsertLeadFromCourseInterest` — se o e-mail ainda não existe, cria um contato completo no CRM (`User`+`DoctorProfile`, `funnelStage: "NEW"`, `leadSource: "SITE"`, `courseOfInterestId` = este curso, atribuído por round-robin); se o e-mail já é um contato existente, só atualiza `courseOfInterestId` e registra uma `LeadActivity` (`NOTE`) com o interesse. Nunca falha a requisição principal (best-effort, erro só vai pro log).
 
 **Erros:** `400 VALIDATION_ERROR`, `404 CATALOG_ITEM_NOT_FOUND` (item não existe, não publicado, ou não é curso/seminário)
 

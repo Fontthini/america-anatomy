@@ -7,6 +7,7 @@ import { Card, CardBody } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { useToast } from "../contexts/ToastContext";
+import { Badge } from "../components/ui/Badge";
 import {
   apiGetCatalogItem,
   apiListEnrolledDoctors,
@@ -18,6 +19,7 @@ import {
   type CourseRegistrationStatus,
   type CourseMaterialType,
 } from "../lib/api/catalog";
+import { apiListLeads } from "../lib/api/crm";
 
 const materialIcons: Record<CourseMaterialType, typeof PlayCircle> = {
   VIDEO: PlayCircle,
@@ -56,6 +58,10 @@ function CourseRosterPage() {
   const { data: registrations = [], isLoading: loadingRegs } = useQuery({
     queryKey: ["courseRegistrations", id],
     queryFn: () => apiListCourseRegistrations(id),
+  });
+  const { data: funnelLeads = [], isLoading: loadingFunnelLeads } = useQuery({
+    queryKey: ["leads", "byCourse", id],
+    queryFn: () => apiListLeads({ courseOfInterestId: id, scope: "all" }),
   });
 
   const statusMutation = useMutation({
@@ -254,6 +260,37 @@ function CourseRosterPage() {
                   </select>
                 </CardBody>
               </Card>
+            ))}
+          </div>
+        )}
+      </div>
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-fg">Interessados no funil — Contatos ({funnelLeads.length})</h2>
+        <p className="mb-3 text-xs text-fg-muted">
+          Contatos que entraram pela landing page pública deste curso e já estão no CRM (Contatos), com etiqueta do curso.
+        </p>
+        {loadingFunnelLeads ? (
+          <p className="text-sm text-fg-muted">Carregando…</p>
+        ) : funnelLeads.length === 0 ? (
+          <p className="text-sm text-fg-muted">Nenhum contato no funil pra este curso ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {funnelLeads.map((lead) => (
+              <Link key={lead.id} to="/contatos">
+                <Card className="transition-colors hover:border-line-strong">
+                  <CardBody className="flex items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-fg">{lead.name}</p>
+                      <p className="truncate text-xs text-fg-muted">
+                        {lead.email}
+                        {lead.phone ? ` · ${lead.phone}` : ""}
+                        {lead.assignedSalesRepName ? ` · vendedor: ${lead.assignedSalesRepName}` : ""}
+                      </p>
+                    </div>
+                    <Badge tone="muted">{lead.funnelStage}</Badge>
+                  </CardBody>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

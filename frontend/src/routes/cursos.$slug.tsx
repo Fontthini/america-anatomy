@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { Calendar, MapPin, CheckCircle, GraduationCap, ShieldCheck } from "lucide-react";
+import { Calendar, MapPin, CheckCircle, GraduationCap, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Label } from "../components/ui/Label";
@@ -15,6 +15,13 @@ export const Route = createFileRoute("/cursos/$slug")({
   head: () => ({ meta: [{ title: "Curso — America Anatomy Institute" }] }),
   component: PublicCoursePage,
 });
+
+// Número oficial da AAI (mesmo do site institucional) — usado nos dois caminhos de conversão.
+const WHATSAPP_NUMBER = "14073718140";
+
+function whatsAppUrl(message: string): string {
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
 
 function formatPrice(price: string | null): string {
   if (!price) return "Sob consulta";
@@ -41,6 +48,7 @@ function RegisterForm({
   error,
   onSubmit,
   submitting,
+  directWhatsAppUrl,
 }: {
   submitted: boolean;
   name: string;
@@ -56,6 +64,7 @@ function RegisterForm({
   error: string | null;
   onSubmit: (ev: FormEvent) => void;
   submitting: boolean;
+  directWhatsAppUrl: string;
 }) {
   return (
     <div className="rounded-2xl border border-line-strong bg-surface-1 p-6 shadow-[var(--shadow-pop)]">
@@ -64,48 +73,72 @@ function RegisterForm({
           <CheckCircle size={32} className="text-success" />
           <p className="font-display text-lg text-fg">Interesse registrado!</p>
           <p className="text-sm text-fg-muted">
-            Sua inscrição foi enviada para análise da equipe AAI — vamos confirmar sua vaga pelo WhatsApp.
+            Abrimos o WhatsApp com sua mensagem pronta — se não abriu, é só chamar a gente por lá pra confirmar sua vaga.
           </p>
+          <a
+            href={directWhatsAppUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-1 inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+          >
+            <MessageCircle size={14} /> Abrir WhatsApp de novo
+          </a>
         </div>
       ) : (
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <p className="font-display text-lg text-fg">Garanta sua vaga</p>
-            <p className="text-xs text-fg-muted">Preencha seus dados — nossa equipe confirma em até 24h.</p>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nome completo</Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="email">E-mail</Label>
-            <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="crm">CRM (opcional)</Label>
-              <Input id="crm" value={crm} onChange={(e) => setCrm(e.target.value)} />
+        <>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <p className="font-display text-lg text-fg">Garanta sua vaga</p>
+              <p className="text-xs text-fg-muted">Preencha seus dados — ao enviar, já te levamos direto pro WhatsApp da equipe.</p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="whatsapp">WhatsApp</Label>
-              <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required />
+              <Label htmlFor="name">Nome completo</Label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">E-mail</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="crm">CRM (opcional)</Label>
+                <Input id="crm" value={crm} onChange={(e) => setCrm(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp">WhatsApp</Label>
+                <Input id="whatsapp" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} required />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="notes">Observações (opcional)</Label>
+              <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
+            </div>
+            {error && <p className="text-xs text-danger">{error}</p>}
+            <Button type="submit" className="w-full" loading={submitting}>
+              Quero me inscrever
+            </Button>
+          </form>
+
+          <div className="my-4 flex items-center gap-3 text-xs text-fg-muted">
+            <span className="h-px flex-1 bg-line" /> ou <span className="h-px flex-1 bg-line" />
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="notes">Observações (opcional)</Label>
-            <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-          </div>
-          {error && <p className="text-xs text-danger">{error}</p>}
-          <Button type="submit" className="w-full" loading={submitting}>
-            Quero me inscrever
-          </Button>
-          <p className="text-center text-xs text-fg-muted">
+
+          <a
+            href={directWhatsAppUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-fg transition-colors hover:border-accent/40 hover:text-accent"
+          >
+            <MessageCircle size={16} /> Falar direto no WhatsApp
+          </a>
+
+          <p className="mt-4 text-center text-xs text-fg-muted">
             Já tem cadastro?{" "}
             <Link to="/login" className="text-fg underline-offset-4 hover:underline">
               Entrar
             </Link>
           </p>
-        </form>
+        </>
       )}
     </div>
   );
@@ -138,7 +171,11 @@ function PublicCoursePage() {
         ...(notes ? { notes } : {}),
       });
     },
-    onSuccess: () => setSubmitted(true),
+    onSuccess: () => {
+      setSubmitted(true);
+      const message = `Olá! Me chamo ${name}, acabei de me inscrever no curso "${course?.title}" pelo site (e-mail ${email}). Aguardo confirmação da vaga!`;
+      window.open(whatsAppUrl(message), "_blank");
+    },
     onError: (err) => setError(err instanceof ApiError ? err.message : "Não foi possível enviar. Tente novamente."),
   });
 
@@ -165,7 +202,27 @@ function PublicCoursePage() {
     );
   }
 
-  const formProps = { submitted, name, setName, email, setEmail, crm, setCrm, whatsapp, setWhatsapp, notes, setNotes, error, onSubmit, submitting: registerMutation.isPending };
+  const directWhatsAppUrl = whatsAppUrl(
+    `Olá! Tenho interesse no curso "${course.title}"${course.startsAt ? ` (${formatDateTime(course.startsAt)})` : ""}. Pode me passar mais informações?`,
+  );
+
+  const formProps = {
+    submitted,
+    name,
+    setName,
+    email,
+    setEmail,
+    crm,
+    setCrm,
+    whatsapp,
+    setWhatsapp,
+    notes,
+    setNotes,
+    error,
+    onSubmit,
+    submitting: registerMutation.isPending,
+    directWhatsAppUrl,
+  };
 
   return (
     <div className="brand-medico dark min-h-screen bg-bg">

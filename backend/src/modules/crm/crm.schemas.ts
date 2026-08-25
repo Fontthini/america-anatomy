@@ -37,6 +37,7 @@ export const updateFunnelStageSchema = z.object({
 export const listLeadsQuerySchema = z.object({
   funnelStage: z.enum(FUNNEL_STAGES).optional(),
   scope: z.enum(["mine", "unassigned", "all"]).optional(),
+  courseOfInterestId: z.string().optional(),
 });
 
 export const requestReviewSchema = z.object({
@@ -107,6 +108,8 @@ export type LeadResponse = {
   city: string | null;
   state: string | null;
   leadSource: LeadSource | null;
+  courseOfInterestId: string | null;
+  courseOfInterestTitle: string | null;
   approvalStatus: ApprovalStatus;
   funnelStage: FunnelStage;
   lossReason: string | null;

@@ -104,6 +104,9 @@ model DoctorProfile {
   profession String?
   cpf        String?
   leadSource LeadSource?
+  // Curso que trouxe esse contato (landing page pública de um curso específico) —
+  // a "caixinha do curso" no funil e a contagem de interessados por curso.
+  courseOfInterestId String?
 
   // Funil de vendas — mesma ideia do peptideo: o estágio vive direto no cadastro do médico.
   funnelStage           FunnelStage   @default(NEW)
@@ -118,6 +121,7 @@ model DoctorProfile {
   user            User      @relation("DoctorProfileUser", fields: [userId], references: [id], onDelete: Cascade)
   approvedBy      User?     @relation("DoctorApprovals", fields: [approvedByUserId], references: [id])
   assignedSalesRep User?    @relation("AssignedSalesRep", fields: [assignedSalesRepId], references: [id])
+  courseOfInterest CatalogItem? @relation("DoctorProfileCourseOfInterest", fields: [courseOfInterestId], references: [id])
   orders          Order[]
   referrals       Referral[]
   activities      LeadActivity[]
@@ -297,6 +301,7 @@ model CatalogItem {
   orders               Order[]
   courseRegistrations  CourseRegistration[]
   materials            CourseMaterial[]
+  interestedLeads      DoctorProfile[]      @relation("DoctorProfileCourseOfInterest")
 
   @@index([type, status])
   @@index([instructorUserId])

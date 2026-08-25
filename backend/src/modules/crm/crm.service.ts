@@ -3,6 +3,7 @@ import { AppError } from "../../middlewares/error-handler.js";
 import { createAuditLog } from "../../lib/audit-log.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
 import { hashPassword } from "../../lib/hash.js";
+import { recordAutoFinancialEntry } from "../finance/finance.service.js";
 import crypto from "node:crypto";
 import type {
   UpdateFunnelStageInput,
@@ -16,11 +17,14 @@ import type {
   LeadActivityResponse,
   LeadReminderResponse,
 } from "./crm.schemas.js";
-import type { DoctorProfile, User, LeadActivity, LeadReminder } from "@prisma/client";
+import type { DoctorProfile, User, LeadActivity, LeadReminder, CatalogItem } from "@prisma/client";
 
 type Actor = { id: string; name: string; role: string };
+type LeadRow = DoctorProfile & { user: User; assignedSalesRep: User | null; courseOfInterest: CatalogItem | null };
 
-function toLeadResponse(profile: DoctorProfile & { user: User; assignedSalesRep: User | null }): LeadResponse {
+const leadInclude = { user: true, assignedSalesRep: true, courseOfInterest: true } as const;
+
+function toLeadResponse(profile: LeadRow): LeadResponse {
   return {
     id: profile.id,
     userId: profile.userId,
@@ -35,6 +39,8 @@ function toLeadResponse(profile: DoctorProfile & { user: User; assignedSalesRep:
     city: profile.city,
     state: profile.state,
     leadSource: profile.leadSource,
+    courseOfInterestId: profile.courseOfInterestId,
+    courseOfInterestTitle: profile.courseOfInterest?.title ?? null,
     approvalStatus: profile.approvalStatus,
     funnelStage: profile.funnelStage,
     lossReason: profile.lossReason,
@@ -106,17 +112,18 @@ export async function listLeads(actor: Actor, query: ListLeadsQuery): Promise<Le
     where: {
       ...scopeWhere,
       ...(query.funnelStage ? { funnelStage: query.funnelStage } : {}),
+      ...(query.courseOfInterestId ? { courseOfInterestId: query.courseOfInterestId } : {}),
     },
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
     orderBy: { createdAt: "desc" },
   });
   return profiles.map(toLeadResponse);
 }
 
-async function findLeadOrThrow(id: string): Promise<DoctorProfile & { user: User; assignedSalesRep: User | null }> {
+async function findLeadOrThrow(id: string): Promise<LeadRow> {
   const profile = await prisma.doctorProfile.findUnique({
     where: { id },
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
   });
   if (!profile) {
     throw new AppError(404, "LEAD_NOT_FOUND", "Lead não encontrado.");
@@ -156,12 +163,12 @@ export async function createLead(actor: Actor, input: CreateLeadInput): Promise<
         },
       },
     },
-    include: { doctorProfile: { include: { user: true, assignedSalesRep: true } } },
+    include: { doctorProfile: { include: leadInclude } },
   });
 
   void createAuditLog(actor, "LEAD_CREATED", `${actor.name} cadastrou contato ${user.name}`);
 
-  return toLeadResponse(user.doctorProfile as DoctorProfile & { user: User; assignedSalesRep: User | null });
+  return toLeadResponse(user.doctorProfile as LeadRow);
 }
 
 /** Edita os dados de cadastro de um contato/lead. */
@@ -174,10 +181,45 @@ export async function updateLead(actor: Actor, leadId: string, input: UpdateLead
   const updated = await prisma.doctorProfile.update({
     where: { id: leadId },
     data: input,
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
   });
 
   return toLeadResponse(updated);
+}
+
+/**
+ * Quando um lead entra em "matrícula concluída" e tem um curso de interesse marcado,
+ * concede acesso ao portal automaticamente (cria o Order confirmado que já libera
+ * materiais/"Meus Pedidos"), já que o pagamento em si acontece fora do sistema (manual)
+ * e o CRM é quem representa "pago e matriculado".
+ */
+async function grantCourseAccessOnEnrollment(doctorProfileId: string, courseId: string, userId: string): Promise<void> {
+  try {
+    const existingOrder = await prisma.order.findFirst({
+      where: { doctorProfileId, catalogItemId: courseId, status: "CONFIRMED" },
+    });
+    if (existingOrder) return;
+
+    const course = await prisma.catalogItem.findUnique({ where: { id: courseId } });
+    if (!course) return;
+
+    const order = await prisma.order.create({
+      data: { doctorProfileId, catalogItemId: courseId, quantity: 1, status: "CONFIRMED", unitPrice: course.price },
+    });
+
+    void createNotification(userId, NotificationType.ORDER_CREATED);
+
+    if (order.unitPrice) {
+      void recordAutoFinancialEntry({
+        type: "INCOME",
+        category: "MATRÍCULA (CRM)",
+        description: `Matrícula confirmada via CRM — ${course.title}`,
+        amount: Number(order.unitPrice),
+      });
+    }
+  } catch (err) {
+    console.error("[crm] Falha ao conceder acesso ao curso na matrícula:", err);
+  }
 }
 
 export async function updateFunnelStage(
@@ -196,7 +238,7 @@ export async function updateFunnelStage(
       funnelStage: input.funnelStage,
       lossReason: input.funnelStage === "LOST" || input.funnelStage === "WITHDRAWN" ? (input.lossReason ?? null) : null,
     },
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
   });
 
   void createAuditLog(
@@ -204,6 +246,10 @@ export async function updateFunnelStage(
     "FUNNEL_STAGE_UPDATED",
     `${updated.user.name}: ${existing.funnelStage} → ${updated.funnelStage}`,
   );
+
+  if (input.funnelStage === "CUSTOMER" && updated.courseOfInterestId) {
+    void grantCourseAccessOnEnrollment(updated.id, updated.courseOfInterestId, updated.userId);
+  }
 
   return toLeadResponse(updated);
 }
@@ -217,7 +263,7 @@ export async function claimLead(actor: Actor, leadId: string): Promise<LeadRespo
   const updated = await prisma.doctorProfile.update({
     where: { id: leadId },
     data: { assignedSalesRepId: actor.id },
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
   });
   void createAuditLog(actor, "LEAD_CLAIMED", `${updated.user.name} assumido por ${actor.name}`);
   return toLeadResponse(updated);
@@ -237,7 +283,7 @@ export async function requestReview(
   const updated = await prisma.doctorProfile.update({
     where: { id: leadId },
     data: { approvalStatus: "IN_REVIEW", reviewRequestedAction: input.action },
-    include: { user: true, assignedSalesRep: true },
+    include: leadInclude,
   });
 
   const managers = await prisma.user.findMany({ where: { role: { in: ["MANAGER", "ADMIN"] } }, select: { id: true } });
@@ -251,6 +297,71 @@ export async function requestReview(
   );
 
   return toLeadResponse(updated);
+}
+
+/**
+ * Chamado a partir do formulário público de interesse num curso (landing page).
+ * Sem ator autenticado — best-effort, nunca lança erro (não pode derrubar o
+ * registro de interesse que já foi salvo). Se o e-mail já existe, só marca o
+ * curso de interesse no contato existente e registra no histórico; senão,
+ * cria um contato novo já dentro do funil, atribuído por round-robin.
+ */
+export async function upsertLeadFromCourseInterest(
+  catalogItemId: string,
+  courseTitle: string,
+  input: { name: string; email: string; whatsapp: string; crm?: string; notes?: string },
+): Promise<void> {
+  try {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: input.email },
+      include: { doctorProfile: true },
+    });
+
+    if (existingUser?.doctorProfile) {
+      await prisma.doctorProfile.update({
+        where: { id: existingUser.doctorProfile.id },
+        data: { courseOfInterestId: catalogItemId },
+      });
+      await prisma.leadActivity.create({
+        data: {
+          doctorProfileId: existingUser.doctorProfile.id,
+          type: "NOTE",
+          note: `Demonstrou interesse via landing page pública: ${courseTitle}${input.notes ? ` — "${input.notes}"` : ""}`,
+        },
+      });
+      return;
+    }
+    if (existingUser) return; // e-mail já usado por conta que não é médico (staff) — não mexe
+
+    const randomPassword = crypto.randomBytes(24).toString("hex");
+    const passwordHash = await hashPassword(randomPassword);
+    const assignedSalesRepId = (await pickNextSalesRep()) ?? undefined;
+
+    await prisma.user.create({
+      data: {
+        name: input.name,
+        email: input.email,
+        passwordHash,
+        role: "DOCTOR",
+        passwordHistory: { create: { passwordHash } },
+        doctorProfile: {
+          create: {
+            phone: input.whatsapp,
+            crm: input.crm,
+            leadSource: "SITE",
+            courseOfInterestId: catalogItemId,
+            assignedSalesRepId,
+          },
+        },
+      },
+    });
+
+    if (assignedSalesRepId) {
+      void createNotification(assignedSalesRepId, NotificationType.LEAD_ASSIGNED);
+    }
+  } catch (err) {
+    console.error("[crm] Falha ao sincronizar lead a partir de interesse em curso:", err);
+  }
 }
 
 // ---------------------------------------------------------------------------
