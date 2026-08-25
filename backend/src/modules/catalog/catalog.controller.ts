@@ -14,6 +14,7 @@ import {
   createCatalogItem,
   updateCatalogItem,
   archiveCatalogItem,
+  deleteCatalogItem,
   getPublicCourseBySlug,
   createCourseRegistration,
   listCourseRegistrations,
@@ -60,6 +61,12 @@ export async function handleArchiveCatalogItem(req: FastifyRequest, reply: Fasti
   const { id } = req.params as { id: string };
   const item = await archiveCatalogItem(id);
   reply.status(200).send(item);
+}
+
+export async function handleDeleteCatalogItem(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  await deleteCatalogItem(id);
+  reply.status(204).send();
 }
 
 export async function handleGetPublicCourse(req: FastifyRequest, reply: FastifyReply): Promise<void> {

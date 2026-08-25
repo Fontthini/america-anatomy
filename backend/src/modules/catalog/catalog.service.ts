@@ -155,6 +155,19 @@ export async function archiveCatalogItem(id: string): Promise<CatalogItemRespons
   return updateCatalogItem(id, { status: "ARCHIVED" });
 }
 
+/**
+ * Apaga o item de verdade (não é o "archive" reversível). Materiais e
+ * inscrições públicas (`CourseRegistration`) saem em cascata pelo schema;
+ * `Order` tem `onDelete: Restrict` de propósito (não apagar pedido/financeiro
+ * silenciosamente), então apaga os pedidos primeiro, explicitamente.
+ */
+export async function deleteCatalogItem(id: string): Promise<void> {
+  await prisma.$transaction([
+    prisma.order.deleteMany({ where: { catalogItemId: id } }),
+    prisma.catalogItem.delete({ where: { id } }),
+  ]);
+}
+
 // ---------------------------------------------------------------------------
 // Página pública de curso/seminário + inscrição de interesse (sem login)
 // ---------------------------------------------------------------------------

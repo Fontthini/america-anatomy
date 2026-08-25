@@ -8,6 +8,7 @@ import {
   handleCreateCatalogItem,
   handleUpdateCatalogItem,
   handleArchiveCatalogItem,
+  handleDeleteCatalogItem,
   handleGetPublicCourse,
   handleCreateCourseRegistration,
   handleListCourseRegistrations,
@@ -39,6 +40,11 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
     "/api/catalog/:id/archive",
     { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
     handleArchiveCatalogItem,
+  );
+  app.delete(
+    "/api/catalog/:id",
+    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
+    handleDeleteCatalogItem,
   );
 
   // Página pública do curso — sem login, médico parceiro sem conta demonstra interesse.
