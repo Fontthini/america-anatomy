@@ -2,17 +2,12 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
 import { hashPassword } from "../../lib/hash.js";
 import { sendEmail } from "../../lib/email/send.js";
-import {
-  doctorPendingApprovalTemplate,
-  doctorApprovedTemplate,
-  doctorRejectedTemplate,
-} from "../../lib/email/templates.js";
+import { doctorPendingApprovalTemplate } from "../../lib/email/templates.js";
 import { createNotification, NotificationType } from "../../lib/notifications.js";
-import { createAuditLog } from "../../lib/audit-log.js";
 import { pickNextSalesRep } from "../crm/crm.service.js";
 import { issueTokens, persistRefreshToken, toUserResponse } from "../auth/auth.service.js";
 import type { AuthResponse } from "../auth/auth.schemas.js";
-import type { DoctorRegisterInput, RejectDoctorInput, DoctorProfileResponse } from "./doctors.schemas.js";
+import type { DoctorRegisterInput, DoctorProfileResponse } from "./doctors.schemas.js";
 import type { DoctorProfile, User, ApprovalStatus } from "@prisma/client";
 
 function toDoctorProfileResponse(profile: DoctorProfile & { user: User }): DoctorProfileResponse {
@@ -118,19 +113,6 @@ export async function listDoctors(status?: ApprovalStatus): Promise<DoctorProfil
   return profiles.map(toDoctorProfileResponse);
 }
 
-async function findProfileByUserIdOrThrow(
-  doctorUserId: string,
-): Promise<DoctorProfile & { user: User }> {
-  const profile = await prisma.doctorProfile.findUnique({
-    where: { userId: doctorUserId },
-    include: { user: true },
-  });
-  if (!profile) {
-    throw new AppError(404, "DOCTOR_PROFILE_NOT_FOUND", "Perfil de médico não encontrado.");
-  }
-  return profile;
-}
-
 /**
  * Apaga o médico de verdade (User + DoctorProfile), não é rejeitar. Tudo que
  * pende do User/DoctorProfile sai em cascata pelo schema (LeadActivity,
@@ -144,58 +126,4 @@ export async function deleteDoctor(doctorUserId: string): Promise<void> {
     throw new AppError(404, "DOCTOR_PROFILE_NOT_FOUND", "Médico não encontrado.");
   }
   await prisma.user.delete({ where: { id: doctorUserId } });
-}
-
-export async function approveDoctor(
-  actor: { id: string; name: string; role: string },
-  doctorUserId: string,
-): Promise<DoctorProfileResponse> {
-  const profile = await findProfileByUserIdOrThrow(doctorUserId);
-
-  const updated = await prisma.doctorProfile.update({
-    where: { id: profile.id },
-    data: {
-      approvalStatus: "APPROVED",
-      approvedAt: new Date(),
-      approvedByUserId: actor.id,
-      rejectedAt: null,
-      rejectionReason: null,
-      reviewRequestedAction: null,
-    },
-    include: { user: true },
-  });
-
-  void sendEmail({ to: updated.user.email, ...doctorApprovedTemplate({ name: updated.user.name }) });
-  void createNotification(updated.userId, NotificationType.DOCTOR_APPROVED);
-  void createAuditLog(actor, "DOCTOR_APPROVED", updated.user.name);
-
-  return toDoctorProfileResponse(updated);
-}
-
-export async function rejectDoctor(
-  actor: { id: string; name: string; role: string },
-  doctorUserId: string,
-  input: RejectDoctorInput,
-): Promise<DoctorProfileResponse> {
-  const profile = await findProfileByUserIdOrThrow(doctorUserId);
-
-  const updated = await prisma.doctorProfile.update({
-    where: { id: profile.id },
-    data: {
-      approvalStatus: "REJECTED",
-      rejectedAt: new Date(),
-      rejectionReason: input.reason ?? null,
-      reviewRequestedAction: null,
-    },
-    include: { user: true },
-  });
-
-  void sendEmail({
-    to: updated.user.email,
-    ...doctorRejectedTemplate({ name: updated.user.name, ...(input.reason ? { reason: input.reason } : {}) }),
-  });
-  void createNotification(updated.userId, NotificationType.DOCTOR_REJECTED);
-  void createAuditLog(actor, "DOCTOR_REJECTED", updated.user.name);
-
-  return toDoctorProfileResponse(updated);
 }

@@ -9,7 +9,6 @@ import crypto from "node:crypto";
 import type {
   UpdateFunnelStageInput,
   ListLeadsQuery,
-  RequestReviewInput,
   CreateLeadInput,
   UpdateLeadInput,
   CreateActivityInput,
@@ -277,35 +276,6 @@ export async function claimLead(actor: Actor, leadId: string): Promise<LeadRespo
   return toLeadResponse(updated);
 }
 
-/** Vendedor não decide aprovação/rejeição diretamente — solicita a um gerente/admin. */
-export async function requestReview(
-  actor: Actor,
-  leadId: string,
-  input: RequestReviewInput,
-): Promise<LeadResponse> {
-  const existing = await findLeadOrThrow(leadId);
-  if (actor.role === "SALES_REP" && existing.assignedSalesRepId !== actor.id) {
-    throw new AppError(403, "FORBIDDEN", "Você só pode solicitar revisão de leads atribuídos a você.");
-  }
-
-  const updated = await prisma.doctorProfile.update({
-    where: { id: leadId },
-    data: { approvalStatus: "IN_REVIEW", reviewRequestedAction: input.action },
-    include: leadInclude,
-  });
-
-  const managers = await prisma.user.findMany({ where: { role: { in: ["MANAGER", "ADMIN"] } }, select: { id: true } });
-  for (const manager of managers) {
-    void createNotification(manager.id, NotificationType.LEAD_REVIEW_REQUESTED);
-  }
-  void createAuditLog(
-    actor,
-    "LEAD_REVIEW_REQUESTED",
-    `${actor.name} solicitou ${input.action === "APPROVE" ? "aprovação" : "rejeição"} de ${updated.user.name}`,
-  );
-
-  return toLeadResponse(updated);
-}
 
 /**
  * Chamado a partir do formulário público de interesse num curso (landing page).

@@ -136,14 +136,6 @@ export async function apiClaimLead(id: string): Promise<LeadResponse> {
   return apiFetch<LeadResponse>(`/api/crm/leads/${id}/claim`, { method: "PATCH" });
 }
 
-/** PATCH /api/crm/leads/:id/request-review */
-export async function apiRequestLeadReview(id: string, action: "APPROVE" | "REJECT"): Promise<LeadResponse> {
-  return apiFetch<LeadResponse>(`/api/crm/leads/${id}/request-review`, {
-    method: "PATCH",
-    body: JSON.stringify({ action }),
-  });
-}
-
 /** GET /api/crm/leads/:id/password-link — gera link de "definir senha" pra mandar manualmente (WhatsApp etc.) */
 export async function apiGetLeadPasswordLink(id: string): Promise<string> {
   const res = await apiFetch<{ url: string }>(`/api/crm/leads/${id}/password-link`);

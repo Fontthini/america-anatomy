@@ -15,7 +15,6 @@ import {
   Package,
   Newspaper,
   Image,
-  Megaphone,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";

@@ -13,16 +13,11 @@ export const doctorRegisterSchema = z.object({
   state: z.string().max(2).optional(),
 });
 
-export const rejectDoctorSchema = z.object({
-  reason: z.string().max(500).optional(),
-});
-
 export const listDoctorsQuerySchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
 });
 
 export type DoctorRegisterInput = z.infer<typeof doctorRegisterSchema>;
-export type RejectDoctorInput = z.infer<typeof rejectDoctorSchema>;
 export type ListDoctorsQuery = z.infer<typeof listDoctorsQuerySchema>;
 
 export type DoctorProfileResponse = {

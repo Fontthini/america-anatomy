@@ -57,16 +57,3 @@ export async function apiListDoctors(status?: ApprovalStatus): Promise<DoctorPro
   const qs = status ? `?status=${status}` : "";
   return apiFetch<DoctorProfileResponse[]>(`/api/doctors${qs}`);
 }
-
-/** PATCH /api/doctors/:id/approve — staff/admin: aprova médico (id = User.id). */
-export async function apiApproveDoctor(userId: string): Promise<DoctorProfileResponse> {
-  return apiFetch<DoctorProfileResponse>(`/api/doctors/${userId}/approve`, { method: "PATCH" });
-}
-
-/** PATCH /api/doctors/:id/reject — staff/admin: rejeita médico, com motivo opcional. */
-export async function apiRejectDoctor(userId: string, reason?: string): Promise<DoctorProfileResponse> {
-  return apiFetch<DoctorProfileResponse>(`/api/doctors/${userId}/reject`, {
-    method: "PATCH",
-    body: JSON.stringify({ reason }),
-  });
-}

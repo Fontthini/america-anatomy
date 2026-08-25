@@ -18,7 +18,6 @@ import {
   handleCreateCourseMaterial,
   handleUpdateCourseMaterial,
   handleDeleteCourseMaterial,
-  handleListMyInstructedCourses,
   handleExpressCourseInterest,
 } from "./catalog.controller.js";
 
@@ -57,13 +56,6 @@ export async function catalogRoutes(app: FastifyInstance): Promise<void> {
     "/api/catalog/:id/express-interest",
     { preHandler: [authenticate, requireApproved] },
     handleExpressCourseInterest,
-  );
-
-  // Cursos onde o médico logado é o instrutor responsável — "Painel do Instrutor".
-  app.get(
-    "/api/catalog/instructor/mine",
-    { preHandler: [authenticate, requireApproved] },
-    handleListMyInstructedCourses,
   );
 
   // Roster do curso: interessados (formulário público) + inscritos reais (Order).

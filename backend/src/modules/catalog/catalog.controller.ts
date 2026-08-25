@@ -24,7 +24,6 @@ import {
   createCourseMaterial,
   updateCourseMaterial,
   deleteCourseMaterial,
-  listMyInstructedCourses,
   expressCourseInterestAsDoctor,
 } from "./catalog.service.js";
 
@@ -131,9 +130,4 @@ export async function handleDeleteCourseMaterial(req: FastifyRequest, reply: Fas
   const { materialId } = req.params as { id: string; materialId: string };
   await deleteCourseMaterial(materialId, req.user.id, isStaffOrAdmin(req));
   reply.status(204).send();
-}
-
-export async function handleListMyInstructedCourses(req: FastifyRequest, reply: FastifyReply): Promise<void> {
-  const items = await listMyInstructedCourses(req.user.id);
-  reply.status(200).send(items);
 }

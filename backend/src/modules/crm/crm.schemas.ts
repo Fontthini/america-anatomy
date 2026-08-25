@@ -40,10 +40,6 @@ export const listLeadsQuerySchema = z.object({
   courseOfInterestId: z.string().optional(),
 });
 
-export const requestReviewSchema = z.object({
-  action: z.enum(["APPROVE", "REJECT"]),
-});
-
 /** Cadastro manual de contato/lead direto pelo CRM (sem passar pelo formulário público). */
 export const createLeadSchema = z.object({
   name: z.string().min(2, "Nome deve ter ao menos 2 caracteres.").max(150),
@@ -88,7 +84,6 @@ export const updateReminderSchema = z.object({
 
 export type UpdateFunnelStageInput = z.infer<typeof updateFunnelStageSchema>;
 export type ListLeadsQuery = z.infer<typeof listLeadsQuerySchema>;
-export type RequestReviewInput = z.infer<typeof requestReviewSchema>;
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;

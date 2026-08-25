@@ -223,16 +223,6 @@ async function assertCourseAccess(catalogItemId: string, userId: string, isStaff
   }
 }
 
-/** Cursos/seminários onde o médico logado é o instrutor responsável — "Painel do Instrutor". */
-export async function listMyInstructedCourses(userId: string): Promise<CatalogItemResponse[]> {
-  const items = await prisma.catalogItem.findMany({
-    where: { instructorUserId: userId },
-    orderBy: { startsAt: "asc" },
-    include: withConfirmedOrdersCount,
-  });
-  return items.map((item) => toCatalogItemResponse(item, item._count.orders));
-}
-
 /** Formulário público — médico parceiro sem conta demonstra interesse num curso/seminário. */
 export async function createCourseRegistration(
   catalogItemId: string,

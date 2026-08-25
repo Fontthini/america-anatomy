@@ -7,7 +7,6 @@ import {
   handleUpdateLead,
   handleUpdateFunnelStage,
   handleClaimLead,
-  handleRequestReview,
   handleListLeadActivities,
   handleCreateLeadActivity,
   handleListLeadReminders,
@@ -24,7 +23,6 @@ export async function crmRoutes(app: FastifyInstance): Promise<void> {
   app.patch("/api/crm/leads/:id", { preHandler: [authenticate, crmStaff] }, handleUpdateLead);
   app.patch("/api/crm/leads/:id/funnel", { preHandler: [authenticate, crmStaff] }, handleUpdateFunnelStage);
   app.patch("/api/crm/leads/:id/claim", { preHandler: [authenticate, crmStaff] }, handleClaimLead);
-  app.patch("/api/crm/leads/:id/request-review", { preHandler: [authenticate, crmStaff] }, handleRequestReview);
   app.get(
     "/api/crm/leads/:id/password-link",
     { preHandler: [authenticate, crmStaff] },
