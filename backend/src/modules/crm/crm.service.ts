@@ -115,6 +115,7 @@ export async function listLeads(actor: Actor, query: ListLeadsQuery): Promise<Le
       ...(query.courseOfInterestId ? { courseOfInterestId: query.courseOfInterestId } : {}),
     },
     include: leadInclude,
+    relationLoadStrategy: "join",
     orderBy: { createdAt: "desc" },
   });
   return profiles.map(toLeadResponse);
@@ -124,6 +125,7 @@ async function findLeadOrThrow(id: string): Promise<LeadRow> {
   const profile = await prisma.doctorProfile.findUnique({
     where: { id },
     include: leadInclude,
+    relationLoadStrategy: "join",
   });
   if (!profile) {
     throw new AppError(404, "LEAD_NOT_FOUND", "Lead não encontrado.");
@@ -164,6 +166,7 @@ export async function createLead(actor: Actor, input: CreateLeadInput): Promise<
       },
     },
     include: { doctorProfile: { include: leadInclude } },
+    relationLoadStrategy: "join",
   });
 
   void createAuditLog(actor, "LEAD_CREATED", `${actor.name} cadastrou contato ${user.name}`);
@@ -182,6 +185,7 @@ export async function updateLead(actor: Actor, leadId: string, input: UpdateLead
     where: { id: leadId },
     data: input,
     include: leadInclude,
+    relationLoadStrategy: "join",
   });
 
   return toLeadResponse(updated);
@@ -246,6 +250,7 @@ export async function updateFunnelStage(
       lossReason: input.funnelStage === "LOST" || input.funnelStage === "WITHDRAWN" ? (input.lossReason ?? null) : null,
     },
     include: leadInclude,
+    relationLoadStrategy: "join",
   });
 
   void createAuditLog(
@@ -271,6 +276,7 @@ export async function claimLead(actor: Actor, leadId: string): Promise<LeadRespo
     where: { id: leadId },
     data: { assignedSalesRepId: actor.id },
     include: leadInclude,
+    relationLoadStrategy: "join",
   });
   void createAuditLog(actor, "LEAD_CLAIMED", `${updated.user.name} assumido por ${actor.name}`);
   return toLeadResponse(updated);
