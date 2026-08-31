@@ -16,24 +16,28 @@ export type RefreshTokenPayload = {
   jti: string;
 };
 
+const JWT_ALGORITHM: jwt.Algorithm = "HS256";
+
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: env.ACCESS_TOKEN_TTL as jwt.SignOptions["expiresIn"],
   });
 }
 
 export function signRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: env.REFRESH_TOKEN_TTL as jwt.SignOptions["expiresIn"],
   });
 }
 
 export function verifyAccessToken(token: string): AccessTokenPayload {
-  return jwt.verify(token, env.JWT_ACCESS_SECRET) as AccessTokenPayload;
+  return jwt.verify(token, env.JWT_ACCESS_SECRET, { algorithms: [JWT_ALGORITHM] }) as AccessTokenPayload;
 }
 
 export function verifyRefreshToken(token: string): RefreshTokenPayload {
-  return jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshTokenPayload;
+  return jwt.verify(token, env.JWT_REFRESH_SECRET, { algorithms: [JWT_ALGORITHM] }) as RefreshTokenPayload;
 }
 
 /** Converte a string de TTL do refresh token para milissegundos. */

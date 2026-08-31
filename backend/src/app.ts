@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import multipart from "@fastify/multipart";
+import rateLimit from "@fastify/rate-limit";
 import { registerCors } from "./plugins/cors.js";
 import { registerCookie } from "./plugins/cookie.js";
 import { registerErrorHandler } from "./middlewares/error-handler.js";
@@ -30,6 +31,13 @@ export async function buildApp() {
       fileSize: 2 * 1024 * 1024, // 2 MB
       files: 1,
     },
+  });
+  // Rate limit global (defesa contra força bruta/DoS); rotas de auth sensíveis
+  // recebem limites mais rígidos via `config.rateLimit` na própria rota.
+  await app.register(rateLimit, {
+    global: true,
+    max: 300,
+    timeWindow: "1 minute",
   });
 
   // Error handler global

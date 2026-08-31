@@ -66,6 +66,16 @@ export function registerErrorHandler(app: FastifyInstance): void {
       });
     }
 
+    // Erro do @fastify/rate-limit
+    if (httpError.statusCode === 429) {
+      return reply.status(429).send({
+        error: {
+          code: "RATE_LIMITED",
+          message: httpError.message ?? "Muitas tentativas. Tente novamente em instantes.",
+        },
+      });
+    }
+
     app.log.error(error);
     return reply.status(500).send({
       error: {

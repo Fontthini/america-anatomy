@@ -1,8 +1,14 @@
 import { z } from "zod";
 
+const httpUrl = (message: string) =>
+  z
+    .string()
+    .url(message)
+    .refine((v) => /^https?:\/\//i.test(v), { message: "URL deve começar com http:// ou https://." });
+
 export const createBannerSchema = z.object({
   placement: z.enum(["LOJA", "BLOG"]),
-  imageUrl: z.string().url("URL de imagem inválida."),
+  imageUrl: httpUrl("URL de imagem inválida."),
   title: z.string().max(120).optional(),
   subtitle: z.string().max(200).optional(),
   active: z.boolean().default(true),
@@ -10,7 +16,7 @@ export const createBannerSchema = z.object({
 });
 
 export const updateBannerSchema = z.object({
-  imageUrl: z.string().url().optional(),
+  imageUrl: httpUrl("URL de imagem inválida.").optional(),
   title: z.string().max(120).optional(),
   subtitle: z.string().max(200).optional(),
   active: z.boolean().optional(),

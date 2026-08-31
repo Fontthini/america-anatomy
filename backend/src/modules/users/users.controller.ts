@@ -3,6 +3,38 @@ import { updateProfileSchema, updatePreferencesSchema, ALLOWED_AVATAR_TYPES } fr
 import { updateProfile, uploadAvatar, updatePreferences } from "./users.service.js";
 import { AppError } from "../../middlewares/error-handler.js";
 
+/**
+ * Confere os magic bytes reais do arquivo — o `mimetype` do multipart é só o
+ * Content-Type declarado pelo cliente, trivial de forjar (ex.: renomear um
+ * .html malicioso pra "foto.png" e mandar com mimetype "image/png").
+ */
+function detectImageMime(buffer: Buffer): string | null {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47 &&
+    buffer[4] === 0x0d &&
+    buffer[5] === 0x0a &&
+    buffer[6] === 0x1a &&
+    buffer[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString("ascii", 0, 4) === "RIFF" &&
+    buffer.toString("ascii", 8, 12) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+  return null;
+}
+
 export async function handleUpdateProfile(
   req: FastifyRequest,
   reply: FastifyReply,
@@ -39,7 +71,18 @@ export async function handleUploadAvatar(
     throw new AppError(413, "FILE_TOO_LARGE", "Arquivo muito grande. Máximo permitido: 2 MB.");
   }
 
-  const user = await uploadAvatar(req.user.id, buffer, mimeType);
+  // O mimetype acima é só o que o cliente declarou (forjável). Confirma pelos
+  // bytes reais do arquivo antes de aceitar.
+  const detectedMime = detectImageMime(buffer);
+  if (!detectedMime || !ALLOWED_AVATAR_TYPES.includes(detectedMime as (typeof ALLOWED_AVATAR_TYPES)[number])) {
+    throw new AppError(
+      400,
+      "INVALID_FILE_TYPE",
+      `O conteúdo do arquivo não corresponde a um tipo permitido. Use: ${ALLOWED_AVATAR_TYPES.join(", ")}.`,
+    );
+  }
+
+  const user = await uploadAvatar(req.user.id, buffer, detectedMime);
   reply.status(200).send(user);
 }
 

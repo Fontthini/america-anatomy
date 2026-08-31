@@ -146,12 +146,6 @@ function LoginPage() {
             </Link>
           </p>
         </form>
-
-        <div className="rounded-lg border border-line bg-surface-1 p-3 text-xs text-fg-muted">
-          <p className="font-medium text-fg">Credenciais demo</p>
-          <p className="mt-0.5 font-mono">admin@demo.com · demo1234 (admin)</p>
-          <p className="mt-0.5 font-mono">medico@demo.com · demo1234 (médico aprovado)</p>
-        </div>
       </div>
     </AuthSplit>
   );

@@ -216,10 +216,18 @@ export async function getMe(userId: string): Promise<UserResponse> {
 // ---------------------------------------------------------------------------
 
 export async function confirmEmail(input: ConfirmEmailInput): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { email: input.email } });
+  if (!user) {
+    throw new AppError(400, "INVALID_CODE", "Código de verificação inválido.");
+  }
+
   const tokenHash = hashToken(input.code);
   const record = await prisma.verificationToken.findUnique({ where: { tokenHash } });
 
-  if (!record || record.type !== "CONFIRM_EMAIL") {
+  // O código é comparado apenas dentro do escopo da conta informada — sem o
+  // binding por e-mail, o hash do código sozinho é o único fator de busca e
+  // pode ser atacado por força bruta contra qualquer conta pendente do banco.
+  if (!record || record.type !== "CONFIRM_EMAIL" || record.userId !== user.id) {
     throw new AppError(400, "INVALID_CODE", "Código de verificação inválido.");
   }
   if (record.usedAt) {

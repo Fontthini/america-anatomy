@@ -62,10 +62,10 @@ export async function apiMe(): Promise<MockUser> {
 }
 
 /** POST /api/auth/confirm-email — confirma e-mail via código OTP de 6 dígitos. */
-export async function apiConfirmEmail(code: string): Promise<void> {
+export async function apiConfirmEmail(email: string, code: string): Promise<void> {
   await apiFetch<{ message: string }>("/api/auth/confirm-email", {
     method: "POST",
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ email, code }),
     skipAuth: true,
   });
 }

@@ -3,6 +3,21 @@ import { env } from "../../config/env.js";
 const appName = () => env.APP_NAME;
 const appUrl = () => env.APP_URL;
 
+/**
+ * Campos como nome de usuário e motivo de rejeição (digitado por staff) são
+ * interpolados direto no HTML do e-mail. Sem escape, um nome/motivo contendo
+ * "<img onerror=...>" executaria no cliente de e-mail de quem recebe — inclui
+ * casos cross-user (equipe escreve o "reason" que o médico rejeitado lê).
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function baseTemplate(content: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -55,7 +70,7 @@ export function confirmCodeTemplate(data: ConfirmCodeEmailData): {
 } {
   const subject = `${data.code} é seu código de verificação — ${appName()}`;
   const html = baseTemplate(`
-    <h1>Bem-vindo, ${data.name}!</h1>
+    <h1>Bem-vindo, ${escapeHtml(data.name)}!</h1>
     <p>Use o código abaixo para confirmar seu endereço de e-mail e ativar sua conta.</p>
     <div style="margin: 24px 0; text-align: center;">
       <div style="display: inline-block; background: #f5f5f5; border: 1px solid #e5e5e5; border-radius: 8px; padding: 16px 32px;">
@@ -81,7 +96,7 @@ export function resetPasswordTemplate(data: ResetPasswordEmailData): {
   const subject = `Redefinição de senha — ${appName()}`;
   const html = baseTemplate(`
     <h1>Redefinição de senha</h1>
-    <p>Olá, ${data.name}! Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+    <p>Olá, ${escapeHtml(data.name)}! Recebemos uma solicitação para redefinir a senha da sua conta.</p>
     <a href="${data.resetUrl}" class="btn">Redefinir senha</a>
     <hr class="divider" />
     <p class="link-fallback">Se o botão não funcionar, copie e cole este link no navegador:<br/>${data.resetUrl}</p>
@@ -106,7 +121,7 @@ export function doctorPendingApprovalTemplate(data: DoctorNameEmailData): {
 } {
   const subject = `Cadastro recebido — ${appName()}`;
   const html = baseTemplate(`
-    <h1>Cadastro recebido, ${data.name}!</h1>
+    <h1>Cadastro recebido, ${escapeHtml(data.name)}!</h1>
     <p>Recebemos seu cadastro como médico e ele já está em análise pela nossa equipe.</p>
     <p>Assim que for aprovado, você receberá um e-mail e já poderá acessar a área exclusiva do médico.</p>
   `);
@@ -121,7 +136,7 @@ export function doctorApprovedTemplate(data: DoctorNameEmailData): {
 } {
   const subject = `Cadastro aprovado — ${appName()}`;
   const html = baseTemplate(`
-    <h1>Parabéns, ${data.name}!</h1>
+    <h1>Parabéns, ${escapeHtml(data.name)}!</h1>
     <p>Seu cadastro foi aprovado. Você já tem acesso à área exclusiva do médico, com catálogo de produtos, cursos e seminários.</p>
     <a href="${appUrl()}/medico" class="btn">Acessar área do médico</a>
   `);
@@ -141,9 +156,9 @@ export function doctorRejectedTemplate(data: DoctorRejectedEmailData): {
 } {
   const subject = `Atualização sobre seu cadastro — ${appName()}`;
   const html = baseTemplate(`
-    <h1>Olá, ${data.name}</h1>
+    <h1>Olá, ${escapeHtml(data.name)}</h1>
     <p>Analisamos seu cadastro e, no momento, não foi possível aprová-lo.</p>
-    ${data.reason ? `<p><strong>Motivo:</strong> ${data.reason}</p>` : ""}
+    ${data.reason ? `<p><strong>Motivo:</strong> ${escapeHtml(data.reason)}</p>` : ""}
     <p>Se você acredita que houve um engano, entre em contato com nossa equipe.</p>
   `);
   const text = `Olá, ${data.name}\n\nAnalisamos seu cadastro e, no momento, não foi possível aprová-lo.${data.reason ? `\n\nMotivo: ${data.reason}` : ""}\n\nSe você acredita que houve um engano, entre em contato com nossa equipe.`;

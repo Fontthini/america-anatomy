@@ -18,18 +18,3 @@ export type MockUser = {
   emailNotifications: boolean;
   productUpdates: boolean;
 };
-
-export const DEMO_CREDENTIALS = {
-  email: "admin@demo.com",
-  password: "demo1234",
-};
-
-export const demoUser: MockUser = {
-  id: "u_admin",
-  name: "Ana Diretora",
-  email: DEMO_CREDENTIALS.email,
-  role: "ADMIN",
-  emailVerified: true,
-  emailNotifications: true,
-  productUpdates: false,
-};

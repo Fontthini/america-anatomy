@@ -1,10 +1,20 @@
 import { z } from "zod";
 import type { CatalogItemType, CatalogItemStatus, CourseRegistrationStatus } from "@prisma/client";
 
+// z.string().url() aceita qualquer esquema válido de URI, incluindo
+// "javascript:alert(1)" — que, renderizado como href/src no frontend, executa
+// script arbitrário (XSS). Restringe a http/https, os únicos esquemas usados
+// de fato por imagens e links de material.
+const httpUrl = (message: string) =>
+  z
+    .string()
+    .url(message)
+    .refine((v) => /^https?:\/\//i.test(v), { message: "URL deve começar com http:// ou https://." });
+
 const baseFields = {
   title: z.string().min(2, "Título deve ter ao menos 2 caracteres.").max(150),
   description: z.string().max(2000).optional(),
-  imageUrl: z.string().url("URL de imagem inválida.").optional(),
+  imageUrl: httpUrl("URL de imagem inválida.").optional(),
   price: z.number().nonnegative().optional(),
   category: z.string().max(60).optional(),
 };
@@ -32,7 +42,7 @@ export const createCatalogItemSchema = z.discriminatedUnion("type", [
 export const updateCatalogItemSchema = z.object({
   title: z.string().min(2).max(150).optional(),
   description: z.string().max(2000).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: httpUrl("URL de imagem inválida.").optional(),
   price: z.number().nonnegative().optional(),
   category: z.string().max(60).optional(),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).optional(),
@@ -143,14 +153,14 @@ export type EnrolledDoctorResponse = {
 export const createCourseMaterialSchema = z.object({
   title: z.string().min(2, "Título deve ter ao menos 2 caracteres.").max(150),
   type: z.enum(["VIDEO", "PDF", "LINK"]),
-  url: z.string().url("URL inválida."),
+  url: httpUrl("URL inválida."),
   order: z.number().int().default(0),
 });
 
 export const updateCourseMaterialSchema = z.object({
   title: z.string().min(2).max(150).optional(),
   type: z.enum(["VIDEO", "PDF", "LINK"]).optional(),
-  url: z.string().url().optional(),
+  url: httpUrl("URL inválida.").optional(),
   order: z.number().int().optional(),
 });
 

@@ -13,6 +13,7 @@ export const loginSchema = z.object({
 });
 
 export const confirmEmailSchema = z.object({
+  email: z.string().email("E-mail inválido.").toLowerCase(),
   code: z.string().length(6, "Código deve ter 6 dígitos.").regex(/^\d{6}$/, "Código deve conter apenas números."),
 });
 
@@ -31,7 +32,7 @@ export const resetPasswordSchema = z.object({
 
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
-export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>; // { code: string }
+export type ConfirmEmailInput = z.infer<typeof confirmEmailSchema>; // { email: string; code: string }
 export type ResendConfirmationInput = z.infer<typeof resendConfirmationSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

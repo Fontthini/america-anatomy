@@ -1,13 +1,19 @@
 import { z } from "zod";
 import type { FinancialEntryType } from "@prisma/client";
 
+const httpUrl = (message: string) =>
+  z
+    .string()
+    .url(message)
+    .refine((v) => /^https?:\/\//i.test(v), { message: "URL deve começar com http:// ou https://." });
+
 export const createFinancialEntrySchema = z.object({
   type: z.enum(["INCOME", "EXPENSE"]),
   category: z.string().min(1).max(60),
   description: z.string().min(1).max(300),
   amount: z.number().positive(),
   entryDate: z.coerce.date(),
-  receiptUrl: z.string().url().optional(),
+  receiptUrl: httpUrl("URL de comprovante inválida.").optional(),
 });
 
 export const updateFinancialEntrySchema = createFinancialEntrySchema.partial();

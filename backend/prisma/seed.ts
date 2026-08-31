@@ -1,11 +1,14 @@
 /**
  * Seed de desenvolvimento.
  * Cria usuários de teste:
- *   Admin:            admin@demo.com   / demo1234  (role ADMIN)
- *   Gerente:          gerente@demo.com / demo1234  (role MANAGER)
- *   Vendedor:         vendedor@demo.com/ demo1234  (role SALES_REP)
- *   Médico aprovado:  medico@demo.com  / demo1234  (role DOCTOR, approvalStatus APPROVED)
- *   Médico pendente:  pendente@demo.com/ demo1234  (role DOCTOR, approvalStatus PENDING, atribuído ao vendedor)
+ *   Admin:            admin@demo.com
+ *   Gerente:          gerente@demo.com   (role MANAGER)
+ *   Vendedor:         vendedor@demo.com  (role SALES_REP)
+ *   Médico aprovado:  medico@demo.com    (role DOCTOR, approvalStatus APPROVED)
+ *   Médico pendente:  pendente@demo.com  (role DOCTOR, approvalStatus PENDING, atribuído ao vendedor)
+ *
+ * Senha: definida em SEED_DEMO_PASSWORD (.env local) — nunca hardcoded no código,
+ * para não deixar credenciais previsíveis documentadas em texto claro no repositório.
  *
  * Executar: npm run seed
  */
@@ -25,7 +28,19 @@ async function hash(password: string) {
 }
 
 async function main() {
-  const passwordHash = await hash("demo1234");
+  if (process.env["NODE_ENV"] === "production") {
+    console.error("❌ Seed de dados demo bloqueado: NODE_ENV=production.");
+    process.exit(1);
+  }
+
+  const seedPassword = process.env["SEED_DEMO_PASSWORD"];
+  if (!seedPassword || seedPassword.length < 12) {
+    console.error(
+      "❌ Defina SEED_DEMO_PASSWORD no .env (mínimo 12 caracteres) antes de rodar o seed.",
+    );
+    process.exit(1);
+  }
+  const passwordHash = await hash(seedPassword);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@demo.com" },

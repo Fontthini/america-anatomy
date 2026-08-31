@@ -110,7 +110,7 @@ function VerifyEmailPage() {
     setLoading(true);
     setError(null);
     try {
-      await apiConfirmEmail(code);
+      await apiConfirmEmail(user?.email ?? "", code);
       // Atualiza o AuthContext imediatamente para evitar redirect loop no guard do _app.tsx
       updateProfile({ emailVerified: true });
       setDone(true);
