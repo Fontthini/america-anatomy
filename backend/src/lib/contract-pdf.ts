@@ -1,3 +1,6 @@
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { CONTRATO_MODELO_BASE64 } from "./contrato-modelo-base64.js";
+
 export type ContractPdfFields = {
   nomeCompleto: string;
   cpf: string;
@@ -25,61 +28,103 @@ export type ContractPdfFields = {
   eventoDatas: string;
 };
 
-function escapePdfText(text: string): string {
-  return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+const FONT_SIZE = 11;
+const LINE_HEIGHT = 14.5;
+const LEFT_MARGIN = 34;
+const RIGHT_EDGE = 562;
+
+/** Quebra um texto em linhas que cabem em `maxWidth`, usando a largura real da fonte. */
+function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(candidate, size) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+/** Apaga uma região (retângulo branco) e escreve um texto novo, quebrando linha sozinho. */
+function replaceRegion(
+  page: PDFPage,
+  font: PDFFont,
+  text: string,
+  region: { top: number; bottom: number; left?: number; right?: number },
+): void {
+  const left = region.left ?? LEFT_MARGIN;
+  const right = region.right ?? RIGHT_EDGE;
+
+  page.drawRectangle({
+    x: left - 2,
+    y: region.bottom,
+    width: right - left + 4,
+    height: region.top - region.bottom,
+    color: rgb(1, 1, 1),
+  });
+
+  const lines = wrapText(text, font, FONT_SIZE, right - left);
+  let y = region.top - FONT_SIZE;
+  for (const line of lines) {
+    page.drawText(line, { x: left, y, size: FONT_SIZE, font, color: rgb(0, 0, 0) });
+    y -= LINE_HEIGHT;
+  }
 }
 
 /**
- * Gera um PDF simples (sem dependências) com os dados do contrato. É um
- * placeholder até o contrato real (com timbre, via Google Docs) ser plugado —
- * ver PENDÊNCIAS.md. Já é suficiente para testar o fluxo Autentique ponta a ponta.
+ * Preenche o contrato original (com timbre) sobrepondo texto novo por cima
+ * dos 3 trechos que mudam por aluno/turma — nome do coordenador, dados do
+ * contratante e a definição do evento. O resto do PDF (cláusulas, timbre,
+ * assinatura da CONTRATADA) fica intacto.
  */
-export function generateContractPdf(fields: ContractPdfFields): Buffer {
-  const lines = [
-    "CONTRATO DE PRESTACAO DE SERVICOS (RASCUNHO)",
-    "",
-    `Curso: ${fields.eventoCidade} - ${fields.eventoDatas}`,
-    `Coordenador: ${fields.coordenadorNome}`,
-    "",
-    "-- CONTRATANTE --",
-    `Nome completo: ${fields.nomeCompleto}`,
-    `CPF: ${fields.cpf}`,
-    `Endereco: ${fields.endereco}, no ${fields.numero}`,
-    `Bairro: ${fields.bairro}`,
-    `Cidade/Estado: ${fields.cidade}/${fields.estado}`,
-    `CEP: ${fields.cep}`,
-    `Estado civil: ${fields.estadoCivil}`,
-    `Profissao: ${fields.profissao}`,
-    `E-mail: ${fields.email}`,
-  ];
+export async function generateContractPdf(fields: ContractPdfFields): Promise<Buffer> {
+  const templateBytes = Buffer.from(CONTRATO_MODELO_BASE64, "base64");
+  const pdfDoc = await PDFDocument.load(templateBytes);
+  const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const pages = pdfDoc.getPages();
+  const page = pages[0];
+  const lastPage = pages[pages.length - 1];
+  if (!page || !lastPage) throw new Error("Modelo de contrato sem páginas");
 
-  const contentLines = lines
-    .map((line, i) => `${i === 0 ? "50 750 Td" : "0 -18 Td"} (${escapePdfText(line)}) Tj`)
-    .join("\n");
-  const content = `BT /F1 12 Tf\n${contentLines}\nET`;
+  replaceRegion(
+    page,
+    font,
+    `COORDENADOR PEDAGÓGICO E CIENTÍFICO: ${fields.coordenadorNome}, inscrito no CPF nº ${fields.coordenadorCpf}, residente à ${fields.coordenadorEndereco}, nº ${fields.coordenadorNumero}, BAIRRO ${fields.coordenadorBairro}, ${fields.coordenadorCidade}, ${fields.coordenadorEstado}, ${fields.coordenadorCep}, ESTADO CIVIL ${fields.coordenadorEstadoCivil}, PROFISSÃO ${fields.coordenadorProfissao}, ENDEREÇO DE E-MAIL ${fields.coordenadorEmail}`,
+    { top: 518, bottom: 430 },
+  );
 
-  const objects = [
-    "<< /Type /Catalog /Pages 2 0 R >>",
-    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
-    "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 612 792] /Contents 5 0 R >>",
-    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-    `<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`,
-  ];
+  replaceRegion(
+    page,
+    font,
+    `CONTRATANTE: ${fields.nomeCompleto}, inscrito no CPF sob nº ${fields.cpf}, residente à ${fields.endereco}, nº ${fields.numero}, BAIRRO ${fields.bairro}, CIDADE ${fields.cidade}, ESTADO ${fields.estado}, CEP ${fields.cep}, ESTADO CIVIL ${fields.estadoCivil}, PROFISSÃO ${fields.profissao}, ENDEREÇO DE E-MAIL ${fields.email}`,
+    { top: 407, bottom: 316 },
+  );
 
-  let pdf = "%PDF-1.4\n";
-  const offsets: number[] = [];
-  objects.forEach((body, i) => {
-    offsets.push(Buffer.byteLength(pdf, "latin1"));
-    pdf += `${i + 1} 0 obj\n${body}\nendobj\n`;
+  replaceRegion(
+    page,
+    font,
+    `01- DEFINIÇÃO EVENTO: A Professora ${fields.coordenadorNome} atuará como Coordenadora Pedagógica e Científica do evento. O curso será realizado nos dias ${fields.eventoDatas}, na cidade de ${fields.eventoCidade}, nas instalações do American Anatomy Institute, podendo o endereço completo ser informado previamente aos participantes.`,
+    { top: 296, bottom: 168 },
+  );
+
+  const closingLine = `${fields.eventoCidade}, ${fields.eventoDatas}.`;
+  const closingWidth = font.widthOfTextAtSize(closingLine, FONT_SIZE);
+  lastPage.drawRectangle({ x: 150, y: 703, width: 300, height: 18, color: rgb(1, 1, 1) });
+  lastPage.drawText(closingLine, {
+    x: (596 - closingWidth) / 2,
+    y: 708,
+    size: FONT_SIZE,
+    font,
+    color: rgb(0, 0, 0),
   });
 
-  const xrefStart = Buffer.byteLength(pdf, "latin1");
-  pdf += `xref\n0 ${objects.length + 1}\n`;
-  pdf += "0000000000 65535 f \n";
-  for (const offset of offsets) {
-    pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
-  }
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
-
-  return Buffer.from(pdf, "latin1");
+  const bytes = await pdfDoc.save();
+  return Buffer.from(bytes);
 }

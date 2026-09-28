@@ -24,6 +24,8 @@
     "argon2": "^0.43.1",
     "fastify": "^5.4.0",
     "jsonwebtoken": "^9.0.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "resend": "^6.12.4",
     "zod": "^3.24.2"
   },

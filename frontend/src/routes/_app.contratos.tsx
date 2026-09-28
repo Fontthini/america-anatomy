@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { FileSignature, CheckCircle2, Clock, XCircle, Settings2 } from "lucide-react";
+import { FileSignature, CheckCircle2, Clock, XCircle, Settings2, Copy, Check } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -52,6 +52,32 @@ function StatCard({ label, value, icon, tone }: { label: string; value: number; 
   );
 }
 
+function PublicLinkCard() {
+  const [copied, setCopied] = useState(false);
+  const url = typeof window !== "undefined" ? `${window.location.origin}/contrato` : "/contrato";
+
+  async function copy() {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Card>
+      <CardBody className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs uppercase tracking-wide text-fg-muted">Link do formulário (envie pro cliente)</p>
+          <p className="truncate font-mono text-sm text-fg">{url}</p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={copy}>
+          {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
+          {copied ? "Copiado!" : "Copiar link"}
+        </Button>
+      </CardBody>
+    </Card>
+  );
+}
+
 function ContractsPage() {
   const { user } = useAuth();
   const canEditConfig = user?.role === "MANAGER" || user?.role === "ADMIN";
@@ -82,6 +108,8 @@ function ContractsPage() {
           ) : undefined
         }
       />
+
+      <PublicLinkCard />
 
       {configOpen && <CourseConfigCard onSaved={() => setConfigOpen(false)} />}
 

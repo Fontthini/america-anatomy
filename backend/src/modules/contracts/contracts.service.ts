@@ -70,7 +70,7 @@ export async function submitContract(input: SubmitContractInput): Promise<{
 }> {
   const config = await getActiveCourseConfig();
 
-  const pdfBuffer = generateContractPdf({ ...input, ...config });
+  const pdfBuffer = await generateContractPdf({ ...input, ...config });
 
   const doc = await createDocumentFromPdf({
     name: `Contrato - ${input.nomeCompleto}`,
