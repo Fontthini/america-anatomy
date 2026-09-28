@@ -110,6 +110,34 @@ export function buildResetUrl(token: string): string {
   return `${appUrl()}/redefinir-senha?token=${token}`;
 }
 
+export interface ContractSignEmailData {
+  name: string;
+  signUrl: string;
+}
+
+/**
+ * O Autentique tem seu próprio e-mail automático de convite pra assinar, mas
+ * a conta usada aqui não está disparando (ver histórico do documento — nunca
+ * chega a tentar enviar). Por isso o nosso backend manda esse e-mail direto,
+ * independente do que o Autentique faça — não depende de terceiro pra entregar.
+ */
+export function contractSignTemplate(data: ContractSignEmailData): {
+  subject: string;
+  html: string;
+  text: string;
+} {
+  const subject = `Seu contrato está pronto para assinatura — ${appName()}`;
+  const html = baseTemplate(`
+    <h1>Olá, ${escapeHtml(data.name)}!</h1>
+    <p>Seu contrato de prestação de serviços já foi gerado e está pronto para assinatura digital.</p>
+    <a href="${data.signUrl}" class="btn">Assinar contrato</a>
+    <hr class="divider" />
+    <p class="link-fallback">Se o botão não funcionar, copie e cole este link no navegador:<br/>${data.signUrl}</p>
+  `);
+  const text = `Seu contrato está pronto — ${appName()}\n\nOlá, ${data.name}!\n\nAcesse o link abaixo para assinar seu contrato:\n${data.signUrl}`;
+  return { subject, html, text };
+}
+
 export interface DoctorNameEmailData {
   name: string;
 }

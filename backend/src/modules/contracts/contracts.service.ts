@@ -3,6 +3,8 @@ import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
 import { createDocumentFromPdf, getSignatureLink, getDocument, documentStatus } from "../../lib/autentique.js";
 import { generateContractPdf } from "../../lib/contract-pdf.js";
+import { sendEmail } from "../../lib/email/send.js";
+import { contractSignTemplate } from "../../lib/email/templates.js";
 import type { SubmitContractInput, CourseConfigInput, ContractResponse, CourseConfigResponse } from "./contracts.schemas.js";
 
 function toContractResponse(c: Contract): ContractResponse {
@@ -102,6 +104,13 @@ export async function submitContract(input: SubmitContractInput): Promise<{
       signUrl,
     },
   });
+
+  // Não depende do e-mail automático do Autentique (a conta usada aqui não
+  // dispara — ver contractSignTemplate). Best-effort: se falhar, o contrato
+  // já foi criado e o link continua disponível na tela de confirmação.
+  if (signUrl) {
+    await sendEmail({ to: input.email, ...contractSignTemplate({ name: input.nomeCompleto, signUrl }) });
+  }
 
   return { status, signUrl };
 }
