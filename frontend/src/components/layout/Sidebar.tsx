@@ -15,6 +15,7 @@ import {
   Package,
   Newspaper,
   Image,
+  FileSignature,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Avatar } from "../ui/Avatar";
@@ -34,6 +35,7 @@ type Item = {
 const items: Item[] = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/contatos", label: "Contatos", icon: KanbanSquare, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
+  { to: "/contratos", label: "Contratos", icon: FileSignature, roles: ["SALES_REP", "MANAGER", "ADMIN"] },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["MANAGER", "ADMIN"] },
   { to: "/catalogo", label: "Loja", icon: Package, roles: ["MANAGER", "ADMIN"] },
   { to: "/gestao-cursos", label: "Cursos", icon: GraduationCap, roles: ["MANAGER", "ADMIN"] },

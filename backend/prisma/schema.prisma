@@ -509,3 +509,63 @@ model VerificationToken {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// ─── Contratos (assinatura digital via Autentique) ─────────────────────────
+// Turma/evento aberto no momento — o coordenador e os dados do evento não têm
+// campo próprio ainda em CatalogItem/User (CPF, endereço completo, estado
+// civil), então ficam num cadastro simples por enquanto. O formulário público
+// de contrato sempre usa o registro mais recente como "a turma atual".
+model ContractCourseConfig {
+  id                     String   @id @default(cuid())
+  label                  String
+  coordenadorNome        String
+  coordenadorCpf         String
+  coordenadorEndereco    String
+  coordenadorNumero      String
+  coordenadorBairro      String
+  coordenadorCidade      String
+  coordenadorEstado      String
+  coordenadorCep         String
+  coordenadorEstadoCivil String
+  coordenadorProfissao   String
+  coordenadorEmail       String
+  eventoCidade           String
+  eventoDatas            String
+  createdAt              DateTime @default(now())
+  createdByUserId        String?
+
+  contracts Contract[]
+}
+
+enum ContractStatus {
+  PENDING
+  SIGNED
+  REFUSED
+}
+
+/** Contrato gerado a partir do formulário público preenchido pelo próprio paciente/aluno. */
+model Contract {
+  id                   String         @id @default(cuid())
+  configId             String
+  nomeCompleto         String
+  email                String
+  cpf                  String
+  endereco             String
+  numero               String
+  bairro               String
+  cidade               String
+  estado               String
+  cep                  String
+  estadoCivil          String
+  profissao            String
+  status               ContractStatus @default(PENDING)
+  autentiqueDocumentId String?
+  signUrl              String?
+  createdAt            DateTime       @default(now())
+  signedAt             DateTime?
+
+  config ContractCourseConfig @relation(fields: [configId], references: [id])
+
+  @@index([autentiqueDocumentId])
+  @@index([createdAt])
+}

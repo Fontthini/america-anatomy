@@ -39,6 +39,12 @@ const envSchema = z.object({
   BUNNY_STORAGE_REGION: z.string().default("storage.bunnycdn.com"),
   // URL pública do pull zone (sem trailing slash): https://meu-pullzone.b-cdn.net
   BUNNY_CDN_URL: z.string().default(""),
+
+  // Assinatura digital de contratos via Autentique (api.autentique.com.br)
+  AUTENTIQUE_API_TOKEN: z.string().default(""),
+  // Opcional — segredo do webhook (painel.autentique.com.br/perfil/webhooks). Sem ele, a
+  // assinatura HMAC do webhook não é verificada (aceita qualquer chamada).
+  AUTENTIQUE_WEBHOOK_SECRET: z.string().default(""),
 });
 
 function parseEnv() {

@@ -15,6 +15,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as ContratoRouteImport } from './routes/contrato'
 import { Route as MedicoRouteImport } from './routes/_medico'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -23,6 +24,7 @@ import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppContratosRouteImport } from './routes/_app.contratos'
 import { Route as AppContatosRouteImport } from './routes/_app.contatos'
 import { Route as MedicoMedicoIndexRouteImport } from './routes/_medico.medico.index'
 import { Route as AppGestaoCursosIndexRouteImport } from './routes/_app.gestao-cursos.index'
@@ -72,6 +74,11 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContratoRoute = ContratoRouteImport.update({
+  id: '/contrato',
+  path: '/contrato',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MedicoRoute = MedicoRouteImport.update({
   id: '/_medico',
   getParentRoute: () => rootRouteImport,
@@ -108,6 +115,11 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppContratosRoute = AppContratosRouteImport.update({
+  id: '/contratos',
+  path: '/contratos',
   getParentRoute: () => AppRoute,
 } as any)
 const AppContatosRoute = AppContatosRouteImport.update({
@@ -203,6 +215,7 @@ const MedicoMedicoBlogIdRoute = MedicoMedicoBlogIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -210,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/contatos': typeof AppContatosRoute
+  '/contratos': typeof AppContratosRoute
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/notifications': typeof AppNotificationsRoute
@@ -235,6 +249,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -242,6 +257,7 @@ export interface FileRoutesByTo {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/contatos': typeof AppContatosRoute
+  '/contratos': typeof AppContratosRoute
   '/dashboard': typeof AppDashboardRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/notifications': typeof AppNotificationsRoute
@@ -270,6 +286,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_medico': typeof MedicoRouteWithChildren
+  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -277,6 +294,7 @@ export interface FileRoutesById {
   '/register-medico': typeof RegisterMedicoRoute
   '/verificar-email': typeof VerificarEmailRoute
   '/_app/contatos': typeof AppContatosRoute
+  '/_app/contratos': typeof AppContratosRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -304,6 +322,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -311,6 +330,7 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/contatos'
+    | '/contratos'
     | '/dashboard'
     | '/financeiro'
     | '/notifications'
@@ -336,6 +356,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -343,6 +364,7 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/contatos'
+    | '/contratos'
     | '/dashboard'
     | '/financeiro'
     | '/notifications'
@@ -370,6 +392,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/_medico'
+    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -377,6 +400,7 @@ export interface FileRouteTypes {
     | '/register-medico'
     | '/verificar-email'
     | '/_app/contatos'
+    | '/_app/contratos'
     | '/_app/dashboard'
     | '/_app/financeiro'
     | '/_app/notifications'
@@ -405,6 +429,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   MedicoRoute: typeof MedicoRouteWithChildren
+  ContratoRoute: typeof ContratoRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
@@ -456,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contrato': {
+      id: '/contrato'
+      path: '/contrato'
+      fullPath: '/contrato'
+      preLoaderRoute: typeof ContratoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_medico': {
@@ -512,6 +544,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/contratos': {
+      id: '/_app/contratos'
+      path: '/contratos'
+      fullPath: '/contratos'
+      preLoaderRoute: typeof AppContratosRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/contatos': {
@@ -645,6 +684,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppContatosRoute: typeof AppContatosRoute
+  AppContratosRoute: typeof AppContratosRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -662,6 +702,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppContatosRoute: AppContatosRoute,
+  AppContratosRoute: AppContratosRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppNotificationsRoute: AppNotificationsRoute,
@@ -708,6 +749,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   MedicoRoute: MedicoRouteWithChildren,
+  ContratoRoute: ContratoRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
