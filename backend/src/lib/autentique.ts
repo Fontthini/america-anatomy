@@ -109,6 +109,42 @@ export async function getSignatureLink(publicId: string): Promise<string | null>
   }
 }
 
+const GET_DOCUMENT_QUERY = `
+  query GetDocument($id: UUID!) {
+    document(id: $id) {
+      id
+      name
+      created_at
+      signatures {
+        public_id
+        name
+        email
+        created_at
+        link { short_link }
+        signed { created_at }
+        rejected { created_at }
+      }
+    }
+  }
+`;
+
+/** Consulta o status atual de um documento direto na API — usado pra manter
+ * o dashboard correto sem depender do webhook estar configurado. */
+export async function getDocument(id: string): Promise<AutentiqueDocument | null> {
+  try {
+    const res = await fetch(AUTENTIQUE_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${getToken()}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ query: GET_DOCUMENT_QUERY, variables: { id } }),
+    });
+    const json = (await res.json()) as { data?: { document: AutentiqueDocument | null }; errors?: unknown };
+    if (!res.ok || json.errors) return null;
+    return json.data?.document ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type DocStatus = "PENDING" | "SIGNED" | "REFUSED";
 
 export function documentStatus(doc: AutentiqueDocument): DocStatus {

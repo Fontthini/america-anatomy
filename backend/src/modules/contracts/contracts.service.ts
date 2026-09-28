@@ -1,7 +1,7 @@
 import type { Contract, ContractCourseConfig } from "@prisma/client";
 import { prisma } from "../../lib/prisma.js";
 import { AppError } from "../../middlewares/error-handler.js";
-import { createDocumentFromPdf, getSignatureLink, documentStatus } from "../../lib/autentique.js";
+import { createDocumentFromPdf, getSignatureLink, getDocument, documentStatus } from "../../lib/autentique.js";
 import { generateContractPdf } from "../../lib/contract-pdf.js";
 import type { SubmitContractInput, CourseConfigInput, ContractResponse, CourseConfigResponse } from "./contracts.schemas.js";
 
@@ -106,9 +106,47 @@ export async function submitContract(input: SubmitContractInput): Promise<{
   return { status, signUrl };
 }
 
+/**
+ * Sincroniza os contratos ainda "pendentes" com o status real no Autentique.
+ * Existe porque o webhook (painel.autentique.com.br/perfil/webhooks) pode não
+ * estar configurado ainda — sem isso, o status nunca atualizava sozinho.
+ * Fica limitado aos 30 mais recentes pendentes pra não estourar rate limit.
+ */
+async function syncPendingContracts(rows: Contract[]): Promise<Contract[]> {
+  const pending = rows.filter((r) => r.status === "PENDING" && r.autentiqueDocumentId).slice(0, 30);
+  if (pending.length === 0) return rows;
+
+  const updates = await Promise.all(
+    pending.map(async (row) => {
+      const doc = await getDocument(row.autentiqueDocumentId!);
+      if (!doc) return null;
+      const status = documentStatus(doc);
+      if (status === "PENDING") return null;
+      const signedAt = doc.signatures[0]?.signed?.created_at;
+      return { id: row.id, status, signedAt: signedAt ? new Date(signedAt) : undefined };
+    }),
+  );
+
+  const changed = updates.filter((u): u is NonNullable<typeof u> => u !== null);
+  if (changed.length === 0) return rows;
+
+  await Promise.all(
+    changed.map((u) =>
+      prisma.contract.update({ where: { id: u.id }, data: { status: u.status, signedAt: u.signedAt } }),
+    ),
+  );
+
+  const byId = new Map(changed.map((u) => [u.id, u]));
+  return rows.map((r) => {
+    const u = byId.get(r.id);
+    return u ? { ...r, status: u.status, signedAt: u.signedAt ?? r.signedAt } : r;
+  });
+}
+
 export async function listContracts(): Promise<ContractResponse[]> {
   const rows = await prisma.contract.findMany({ orderBy: { createdAt: "desc" }, take: 500 });
-  return rows.map(toContractResponse);
+  const synced = await syncPendingContracts(rows);
+  return synced.map(toContractResponse);
 }
 
 export async function updateContractStatusByAutentiqueId(
