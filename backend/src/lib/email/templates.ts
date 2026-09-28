@@ -133,8 +133,9 @@ export function contractSignTemplate(data: ContractSignEmailData): {
     <a href="${data.signUrl}" class="btn">Assinar contrato</a>
     <hr class="divider" />
     <p class="link-fallback">Se o botão não funcionar, copie e cole este link no navegador:<br/>${data.signUrl}</p>
+    <p style="font-size:13px;color:#888;">Não encontrou este e-mail na caixa de entrada? Confira também a pasta de spam/lixo eletrônico.</p>
   `);
-  const text = `Seu contrato está pronto — ${appName()}\n\nOlá, ${data.name}!\n\nAcesse o link abaixo para assinar seu contrato:\n${data.signUrl}`;
+  const text = `Seu contrato está pronto — ${appName()}\n\nOlá, ${data.name}!\n\nAcesse o link abaixo para assinar seu contrato:\n${data.signUrl}\n\n(Não encontrou este e-mail na caixa de entrada? Confira também a pasta de spam.)`;
   return { subject, html, text };
 }
 
