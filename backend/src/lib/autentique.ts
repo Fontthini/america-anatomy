@@ -63,7 +63,17 @@ export async function createDocumentFromPdf(params: {
     query: CREATE_DOCUMENT_MUTATION,
     variables: {
       document: { name: params.name },
-      signers: [{ name: params.signerName, email: params.signerEmail, action: "SIGN" }],
+      signers: [
+        {
+          name: params.signerName,
+          email: params.signerEmail,
+          action: "SIGN",
+          // Sem isso o Autentique só gera o link (nunca dispara o e-mail
+          // automático) — confirmado pelo histórico do documento não mostrar
+          // nenhum evento de envio de e-mail.
+          delivery_method: "DELIVERY_METHOD_EMAIL",
+        },
+      ],
       file: null,
     },
   });
