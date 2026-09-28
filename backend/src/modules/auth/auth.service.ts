@@ -294,8 +294,11 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<void> 
 
   const rawToken = await createVerificationToken(user.id, "RESET_PASSWORD", RESET_PASSWORD_TTL_MS);
   const tpl = resetPasswordTemplate({ name: user.name, resetUrl: buildResetUrl(rawToken) });
-  void sendEmail({ to: user.email, ...tpl });
-  void createNotification(user.id, NotificationType.PASSWORD_RESET_REQUESTED);
+  // Serverless (Vercel): a função pode congelar assim que a resposta HTTP sai,
+  // matando promises "fire-and-forget" ainda pendentes — por isso await aqui,
+  // não `void`. Sem isso o e-mail às vezes nunca chega a ser enviado de verdade.
+  await sendEmail({ to: user.email, ...tpl });
+  await createNotification(user.id, NotificationType.PASSWORD_RESET_REQUESTED);
 }
 
 /**

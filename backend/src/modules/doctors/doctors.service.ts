@@ -55,7 +55,9 @@ export async function registerDoctor(input: DoctorRegisterInput): Promise<AuthRe
     },
   });
 
-  void sendEmail({ to: user.email, ...doctorPendingApprovalTemplate({ name: user.name }) });
+  // Serverless (Vercel): a função pode congelar assim que a resposta HTTP sai,
+  // matando promises "fire-and-forget" ainda pendentes — por isso await, não `void`.
+  await sendEmail({ to: user.email, ...doctorPendingApprovalTemplate({ name: user.name }) });
 
   // DoctorProfile recém-criado nasce PENDING (default do schema) — sem precisar reconsultar.
   const { accessToken, refreshToken } = issueTokens({ ...user, doctorApprovalStatus: "PENDING" });
