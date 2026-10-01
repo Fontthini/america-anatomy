@@ -511,12 +511,15 @@ model VerificationToken {
 }
 
 // ─── Contratos (assinatura digital via Autentique) ─────────────────────────
-// Turma/evento aberto no momento — o coordenador e os dados do evento não têm
+// Uma turma/evento por registro — o coordenador e os dados do evento não têm
 // campo próprio ainda em CatalogItem/User (CPF, endereço completo, estado
-// civil), então ficam num cadastro simples por enquanto. O formulário público
-// de contrato sempre usa o registro mais recente como "a turma atual".
+// civil), então ficam num cadastro simples por enquanto. Cada turma tem seu
+// próprio link público (/contrato/:slug), escolhido pela equipe ao copiar o
+// link certo pra cada grupo de clientes — não existe mais "a turma atual"
+// única, dá pra ter várias abertas ao mesmo tempo.
 model ContractCourseConfig {
   id                     String   @id @default(cuid())
+  slug                   String   @unique
   label                  String
   coordenadorNome        String
   coordenadorCpf         String

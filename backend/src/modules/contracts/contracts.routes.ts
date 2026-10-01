@@ -4,19 +4,20 @@ import { requireRole } from "../../middlewares/require-role.js";
 import {
   handleSubmitContract,
   handleListContracts,
-  handleGetCourseConfig,
+  handleListCourseConfigs,
   handleSaveCourseConfig,
 } from "./contracts.controller.js";
 import { handleAutentiqueWebhook } from "./contracts.webhook.js";
 
 export async function contractsRoutes(app: FastifyInstance): Promise<void> {
-  // Formulário público — o paciente/aluno preenche sozinho, sem login, a partir do link que a equipe manda.
-  app.post("/api/public/contracts", handleSubmitContract);
+  // Formulário público — o paciente/aluno preenche sozinho, sem login, a partir
+  // do link específico da turma (/contrato/:slug) que a equipe manda.
+  app.post("/api/public/contracts/:slug", handleSubmitContract);
 
-  // Staff (CRM) acompanha os contratos gerados e configura o coordenador/evento da turma atual.
+  // Staff (CRM) acompanha os contratos gerados e cadastra as turmas (coordenador/evento).
   const staff = { preHandler: [authenticate, requireRole("SALES_REP", "MANAGER", "ADMIN")] };
   app.get("/api/contracts", staff, handleListContracts);
-  app.get("/api/contracts/config", staff, handleGetCourseConfig);
+  app.get("/api/contracts/config", staff, handleListCourseConfigs);
   app.post(
     "/api/contracts/config",
     { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },

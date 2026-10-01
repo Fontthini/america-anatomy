@@ -22,6 +22,7 @@ function toContractResponse(c: Contract): ContractResponse {
 function toConfigResponse(c: ContractCourseConfig): CourseConfigResponse {
   return {
     id: c.id,
+    slug: c.slug,
     label: c.label,
     coordenadorNome: c.coordenadorNome,
     coordenadorCpf: c.coordenadorCpf,
@@ -40,37 +41,59 @@ function toConfigResponse(c: ContractCourseConfig): CourseConfigResponse {
   };
 }
 
-/** A "turma atual" é sempre o cadastro de coordenador/evento mais recente. */
-export async function getActiveCourseConfig(): Promise<ContractCourseConfig> {
-  const config = await prisma.contractCourseConfig.findFirst({ orderBy: { createdAt: "desc" } });
+function slugify(label: string): string {
+  return label
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // remove acentos
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/** Busca a turma pelo slug do link público (/contrato/:slug). */
+export async function getCourseConfigBySlug(slug: string): Promise<ContractCourseConfig> {
+  const config = await prisma.contractCourseConfig.findUnique({ where: { slug } });
   if (!config) {
-    throw new AppError(
-      400,
-      "NO_ACTIVE_COURSE",
-      "Nenhuma turma configurada ainda. Cadastre o coordenador/evento atual primeiro.",
-    );
+    throw new AppError(404, "COURSE_NOT_FOUND", "Link de turma inválido ou não encontrado.");
   }
   return config;
 }
 
-export async function getActiveCourseConfigResponse(): Promise<CourseConfigResponse | null> {
-  const config = await prisma.contractCourseConfig.findFirst({ orderBy: { createdAt: "desc" } });
-  return config ? toConfigResponse(config) : null;
+export async function listCourseConfigs(): Promise<CourseConfigResponse[]> {
+  const configs = await prisma.contractCourseConfig.findMany({ orderBy: { createdAt: "desc" } });
+  return configs.map(toConfigResponse);
 }
 
 export async function saveCourseConfig(
   input: CourseConfigInput,
   createdByUserId: string,
 ): Promise<CourseConfigResponse> {
-  const config = await prisma.contractCourseConfig.create({ data: { ...input, createdByUserId } });
-  return toConfigResponse(config);
+  const base = slugify(input.label);
+  if (!base) {
+    throw new AppError(400, "INVALID_LABEL", "Nome da turma precisa ter ao menos uma letra ou número.");
+  }
+
+  // Tenta o slug "limpo" primeiro; se já existir (duas turmas com nome
+  // parecido), acrescenta um sufixo curto até achar um livre.
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const slug = attempt === 0 ? base : `${base}-${attempt + 1}`;
+    const exists = await prisma.contractCourseConfig.findUnique({ where: { slug }, select: { id: true } });
+    if (!exists) {
+      const config = await prisma.contractCourseConfig.create({ data: { ...input, slug, createdByUserId } });
+      return toConfigResponse(config);
+    }
+  }
+  throw new AppError(409, "SLUG_CONFLICT", "Não foi possível gerar um link único para essa turma, tente outro nome.");
 }
 
-export async function submitContract(input: SubmitContractInput): Promise<{
+export async function submitContract(
+  slug: string,
+  input: SubmitContractInput,
+): Promise<{
   status: ContractResponse["status"];
   signUrl: string | null;
 }> {
-  const config = await getActiveCourseConfig();
+  const config = await getCourseConfigBySlug(slug);
 
   const pdfBuffer = await generateContractPdf({ ...input, ...config });
 

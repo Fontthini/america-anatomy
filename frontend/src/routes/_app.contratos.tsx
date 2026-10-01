@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { FileSignature, CheckCircle2, Clock, XCircle, Settings2, Copy, Check } from "lucide-react";
+import { FileSignature, CheckCircle2, Clock, XCircle, Plus, Copy, Check } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -11,9 +11,10 @@ import { Badge } from "../components/ui/Badge";
 import { useAuth } from "../contexts/AuthContext";
 import {
   apiListContracts,
-  apiGetCourseConfig,
+  apiListCourseConfigs,
   apiSaveCourseConfig,
   type CourseConfigPayload,
+  type CourseConfigResponse,
 } from "../lib/api/contracts";
 
 export const Route = createFileRoute("/_app/contratos")({
@@ -52,9 +53,9 @@ function StatCard({ label, value, icon, tone }: { label: string; value: number; 
   );
 }
 
-function PublicLinkCard() {
+function CopyLinkButton({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? `${window.location.origin}/contrato` : "/contrato";
+  const url = typeof window !== "undefined" ? `${window.location.origin}/contrato/${slug}` : `/contrato/${slug}`;
 
   async function copy() {
     await navigator.clipboard.writeText(url);
@@ -63,16 +64,46 @@ function PublicLinkCard() {
   }
 
   return (
+    <Button variant="secondary" size="sm" onClick={copy}>
+      {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
+      {copied ? "Copiado!" : "Copiar link"}
+    </Button>
+  );
+}
+
+function TurmasCard({ configs, canEdit, onNew }: { configs: CourseConfigResponse[]; canEdit: boolean; onNew: () => void }) {
+  return (
     <Card>
-      <CardBody className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide text-fg-muted">Link do formulário (envie pro cliente)</p>
-          <p className="truncate font-mono text-sm text-fg">{url}</p>
+      <CardBody>
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="font-display text-base text-fg">Turmas</p>
+            <p className="text-xs text-fg-muted">Cada turma tem seu próprio link — copie e envie pro grupo de clientes certo.</p>
+          </div>
+          {canEdit && (
+            <Button variant="secondary" size="sm" onClick={onNew}>
+              <Plus size={14} className="mr-1.5" /> Nova turma
+            </Button>
+          )}
         </div>
-        <Button variant="secondary" size="sm" onClick={copy}>
-          {copied ? <Check size={14} className="mr-1.5" /> : <Copy size={14} className="mr-1.5" />}
-          {copied ? "Copiado!" : "Copiar link"}
-        </Button>
+
+        <div className="divide-y divide-line">
+          {configs.map((c) => (
+            <div key={c.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-fg">{c.label}</p>
+                <p className="truncate text-xs text-fg-muted">
+                  {c.eventoCidade} · {c.eventoDatas} · Coordenador: {c.coordenadorNome}
+                </p>
+                <p className="truncate font-mono text-xs text-fg-muted">/contrato/{c.slug}</p>
+              </div>
+              <CopyLinkButton slug={c.slug} />
+            </div>
+          ))}
+          {configs.length === 0 && (
+            <p className="py-6 text-center text-sm text-fg-muted">Nenhuma turma cadastrada ainda.</p>
+          )}
+        </div>
       </CardBody>
     </Card>
   );
@@ -81,13 +112,15 @@ function PublicLinkCard() {
 function ContractsPage() {
   const { user } = useAuth();
   const canEditConfig = user?.role === "MANAGER" || user?.role === "ADMIN";
-  const [configOpen, setConfigOpen] = useState(false);
+  const [newConfigOpen, setNewConfigOpen] = useState(false);
 
   const { data: contracts = [], isLoading } = useQuery({
     queryKey: ["contracts"],
     queryFn: apiListContracts,
     refetchInterval: 30_000,
   });
+
+  const { data: configs = [] } = useQuery({ queryKey: ["contractsConfig"], queryFn: apiListCourseConfigs });
 
   const total = contracts.length;
   const signed = contracts.filter((c) => c.status === "SIGNED").length;
@@ -99,19 +132,12 @@ function ContractsPage() {
       <PageHeader
         eyebrow="CRM"
         title="Contratos"
-        description="Acompanhe os contratos gerados pelo formulário público e o status de assinatura no Autentique."
-        action={
-          canEditConfig ? (
-            <Button variant="secondary" onClick={() => setConfigOpen((v) => !v)}>
-              <Settings2 size={14} className="mr-1.5" /> Turma atual
-            </Button>
-          ) : undefined
-        }
+        description="Acompanhe os contratos gerados pelos formulários públicos e o status de assinatura no Autentique."
       />
 
-      <PublicLinkCard />
+      <TurmasCard configs={configs} canEdit={canEditConfig} onNew={() => setNewConfigOpen((v) => !v)} />
 
-      {configOpen && <CourseConfigCard onSaved={() => setConfigOpen(false)} />}
+      {newConfigOpen && <CourseConfigCard onSaved={() => setNewConfigOpen(false)} />}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Total enviados" value={total} icon={<FileSignature size={18} />} tone="bg-accent-soft text-accent" />
@@ -165,8 +191,7 @@ function ContractsPage() {
 
 function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
   const queryClient = useQueryClient();
-  const { data: current } = useQuery({ queryKey: ["contractsConfig"], queryFn: apiGetCourseConfig });
-  const [form, setForm] = useState<CourseConfigPayload>(current ?? EMPTY_CONFIG);
+  const [form, setForm] = useState<CourseConfigPayload>(EMPTY_CONFIG);
   const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof CourseConfigPayload>(key: K, value: string) {
@@ -177,6 +202,7 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
     mutationFn: () => apiSaveCourseConfig(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contractsConfig"] });
+      setForm(EMPTY_CONFIG);
       onSaved();
     },
     onError: () => setError("Não foi possível salvar. Confira os campos."),
@@ -193,20 +219,16 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
       <CardBody>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <p className="font-display text-base text-fg">Turma / evento atual</p>
+            <p className="font-display text-base text-fg">Nova turma</p>
             <p className="text-xs text-fg-muted">
-              Esses dados (coordenador e evento) entram automaticamente em todo contrato gerado a partir de agora —
-              o paciente não vê nem edita isso.
-              {current && (
-                <span className="ml-1">
-                  Configuração ativa: <strong className="text-fg">{current.label}</strong>.
-                </span>
-              )}
+              Esses dados (coordenador e evento) entram automaticamente em todo contrato gerado a partir do link
+              desta turma — o paciente não vê nem edita isso. O nome vira o link público, então escolha algo
+              identificável.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label>Nome da turma (só pra sua referência)</Label>
+            <Label>Nome da turma</Label>
             <Input required value={form.label} onChange={(e) => update("label", e.target.value)} placeholder="Ex: Orlando - Maio 2027" />
           </div>
 
@@ -301,7 +323,7 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
           {error && <p className="text-xs text-danger">{error}</p>}
 
           <Button type="submit" loading={saveMutation.isPending}>
-            Salvar como turma atual
+            Criar turma
           </Button>
         </form>
       </CardBody>

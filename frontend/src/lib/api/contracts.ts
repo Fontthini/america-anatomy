@@ -48,13 +48,18 @@ export type CourseConfigPayload = {
   eventoDatas: string;
 };
 
-export type CourseConfigResponse = CourseConfigPayload & { id: string; createdAt: string };
+export type CourseConfigResponse = CourseConfigPayload & { id: string; slug: string; createdAt: string };
 
-/** POST /api/public/contracts — formulário público, sem login */
+/** POST /api/public/contracts/:slug — formulário público, sem login */
 export async function apiSubmitContract(
+  slug: string,
   payload: SubmitContractPayload,
 ): Promise<{ status: ContractStatus; signUrl: string | null }> {
-  return apiFetch("/api/public/contracts", { method: "POST", body: JSON.stringify(payload), skipAuth: true });
+  return apiFetch(`/api/public/contracts/${encodeURIComponent(slug)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+    skipAuth: true,
+  });
 }
 
 /** GET /api/contracts — staff (SALES_REP, MANAGER, ADMIN) */
@@ -62,12 +67,12 @@ export async function apiListContracts(): Promise<ContractResponse[]> {
   return apiFetch<ContractResponse[]>("/api/contracts");
 }
 
-/** GET /api/contracts/config — turma/evento atualmente configurado */
-export async function apiGetCourseConfig(): Promise<CourseConfigResponse | null> {
-  return apiFetch<CourseConfigResponse | null>("/api/contracts/config");
+/** GET /api/contracts/config — lista todas as turmas cadastradas */
+export async function apiListCourseConfigs(): Promise<CourseConfigResponse[]> {
+  return apiFetch<CourseConfigResponse[]>("/api/contracts/config");
 }
 
-/** POST /api/contracts/config — MANAGER/ADMIN define a turma atual (coordenador + evento) */
+/** POST /api/contracts/config — MANAGER/ADMIN cadastra uma nova turma (coordenador + evento) */
 export async function apiSaveCourseConfig(payload: CourseConfigPayload): Promise<CourseConfigResponse> {
   return apiFetch<CourseConfigResponse>("/api/contracts/config", { method: "POST", body: JSON.stringify(payload) });
 }

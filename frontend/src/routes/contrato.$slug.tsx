@@ -9,8 +9,8 @@ import { AaiLogo } from "../components/ui/AaiLogo";
 import { apiSubmitContract, type SubmitContractPayload } from "../lib/api/contracts";
 import { ApiError } from "../lib/api/client";
 
-export const Route = createFileRoute("/contrato")({
-  head: () => ({ meta: [{ title: "Confirmar dados — America Anatomy Institute" }] }),
+export const Route = createFileRoute("/contrato/$slug")({
+  head: () => ({ meta: [{ title: "Confirmar dados — American Anatomy Institute" }] }),
   component: ContractPage,
 });
 
@@ -29,14 +29,22 @@ const INITIAL: SubmitContractPayload = {
 };
 
 function ContractPage() {
+  const { slug } = Route.useParams();
   const [form, setForm] = useState<SubmitContractPayload>(INITIAL);
   const [error, setError] = useState<string | null>(null);
   const [signUrl, setSignUrl] = useState<string | null>(null);
 
   const submitMutation = useMutation({
-    mutationFn: () => apiSubmitContract(form),
+    mutationFn: () => apiSubmitContract(slug, form),
     onSuccess: (res) => setSignUrl(res.signUrl),
-    onError: (err) => setError(err instanceof ApiError ? err.message : "Não foi possível enviar. Tente novamente."),
+    onError: (err) =>
+      setError(
+        err instanceof ApiError
+          ? err.status === 404
+            ? "Este link não é válido ou a turma não existe mais. Peça o link correto à equipe."
+            : err.message
+          : "Não foi possível enviar. Tente novamente.",
+      ),
   });
 
   function update<K extends keyof SubmitContractPayload>(key: K, value: string) {

@@ -45,4 +45,4 @@ export type ContractResponse = {
   signedAt: string | null;
 };
 
-export type CourseConfigResponse = CourseConfigInput & { id: string; createdAt: string };
+export type CourseConfigResponse = CourseConfigInput & { id: string; slug: string; createdAt: string };

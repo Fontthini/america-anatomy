@@ -15,11 +15,12 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as ContratoRouteImport } from './routes/contrato'
 import { Route as MedicoRouteImport } from './routes/_medico'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ContratoIndexRouteImport } from './routes/contrato.index'
 import { Route as CursosSlugRouteImport } from './routes/cursos.$slug'
+import { Route as ContratoSlugRouteImport } from './routes/contrato.$slug'
 import { Route as AppProfileRouteImport } from './routes/_app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
@@ -74,11 +75,6 @@ const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
   path: '/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ContratoRoute = ContratoRouteImport.update({
-  id: '/contrato',
-  path: '/contrato',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MedicoRoute = MedicoRouteImport.update({
   id: '/_medico',
   getParentRoute: () => rootRouteImport,
@@ -92,10 +88,20 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContratoIndexRoute = ContratoIndexRouteImport.update({
+  id: '/contrato/',
+  path: '/contrato/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CursosSlugRoute = CursosSlugRouteImport.update({
   id: '/cursos/$slug',
   path: '/cursos/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ContratoSlugRoute = ContratoSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ContratoRoute,
 } as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
@@ -215,7 +221,6 @@ const MedicoMedicoBlogIdRoute = MedicoMedicoBlogIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -228,7 +233,9 @@ export interface FileRoutesByFullPath {
   '/financeiro': typeof AppFinanceiroRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/contrato/$slug': typeof ContratoSlugRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/contrato/': typeof ContratoIndexRoute
   '/blog/$id': typeof AppBlogIdRoute
   '/blog/novo': typeof AppBlogNovoRoute
   '/catalogo/$id': typeof AppCatalogoIdRoute
@@ -249,7 +256,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -262,7 +268,9 @@ export interface FileRoutesByTo {
   '/financeiro': typeof AppFinanceiroRoute
   '/notifications': typeof AppNotificationsRoute
   '/profile': typeof AppProfileRoute
+  '/contrato/$slug': typeof ContratoSlugRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/contrato': typeof ContratoIndexRoute
   '/blog/$id': typeof AppBlogIdRoute
   '/blog/novo': typeof AppBlogNovoRoute
   '/catalogo/$id': typeof AppCatalogoIdRoute
@@ -286,7 +294,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_medico': typeof MedicoRouteWithChildren
-  '/contrato': typeof ContratoRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
@@ -299,7 +306,9 @@ export interface FileRoutesById {
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/profile': typeof AppProfileRoute
+  '/contrato/$slug': typeof ContratoSlugRoute
   '/cursos/$slug': typeof CursosSlugRoute
+  '/contrato/': typeof ContratoIndexRoute
   '/_app/blog/$id': typeof AppBlogIdRoute
   '/_app/blog/novo': typeof AppBlogNovoRoute
   '/_app/catalogo/$id': typeof AppCatalogoIdRoute
@@ -322,7 +331,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -335,7 +343,9 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/notifications'
     | '/profile'
+    | '/contrato/$slug'
     | '/cursos/$slug'
+    | '/contrato/'
     | '/blog/$id'
     | '/blog/novo'
     | '/catalogo/$id'
@@ -356,7 +366,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -369,7 +378,9 @@ export interface FileRouteTypes {
     | '/financeiro'
     | '/notifications'
     | '/profile'
+    | '/contrato/$slug'
     | '/cursos/$slug'
+    | '/contrato'
     | '/blog/$id'
     | '/blog/novo'
     | '/catalogo/$id'
@@ -392,7 +403,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/_medico'
-    | '/contrato'
     | '/forgot-password'
     | '/login'
     | '/redefinir-senha'
@@ -405,7 +415,9 @@ export interface FileRouteTypes {
     | '/_app/financeiro'
     | '/_app/notifications'
     | '/_app/profile'
+    | '/contrato/$slug'
     | '/cursos/$slug'
+    | '/contrato/'
     | '/_app/blog/$id'
     | '/_app/blog/novo'
     | '/_app/catalogo/$id'
@@ -429,7 +441,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   MedicoRoute: typeof MedicoRouteWithChildren
-  ContratoRoute: typeof ContratoRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
@@ -437,6 +448,7 @@ export interface RootRouteChildren {
   RegisterMedicoRoute: typeof RegisterMedicoRoute
   VerificarEmailRoute: typeof VerificarEmailRoute
   CursosSlugRoute: typeof CursosSlugRoute
+  ContratoIndexRoute: typeof ContratoIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -483,13 +495,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/contrato': {
-      id: '/contrato'
-      path: '/contrato'
-      fullPath: '/contrato'
-      preLoaderRoute: typeof ContratoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_medico': {
       id: '/_medico'
       path: ''
@@ -511,12 +516,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contrato/': {
+      id: '/contrato/'
+      path: '/contrato'
+      fullPath: '/contrato/'
+      preLoaderRoute: typeof ContratoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cursos/$slug': {
       id: '/cursos/$slug'
       path: '/cursos/$slug'
       fullPath: '/cursos/$slug'
       preLoaderRoute: typeof CursosSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/contrato/$slug': {
+      id: '/contrato/$slug'
+      path: '/$slug'
+      fullPath: '/contrato/$slug'
+      preLoaderRoute: typeof ContratoSlugRouteImport
+      parentRoute: typeof ContratoRoute
     }
     '/_app/profile': {
       id: '/_app/profile'
@@ -749,7 +768,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   MedicoRoute: MedicoRouteWithChildren,
-  ContratoRoute: ContratoRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
@@ -757,6 +775,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterMedicoRoute: RegisterMedicoRoute,
   VerificarEmailRoute: VerificarEmailRoute,
   CursosSlugRoute: CursosSlugRoute,
+  ContratoIndexRoute: ContratoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
