@@ -15,6 +15,9 @@ export type ContractResponse = {
   signUrl: string | null;
   createdAt: string;
   signedAt: string | null;
+  turmaId: string;
+  turmaLabel: string;
+  coordenadorNome: string;
 };
 
 export type SubmitContractPayload = {

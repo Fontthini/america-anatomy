@@ -7,7 +7,9 @@ import { sendEmail } from "../../lib/email/send.js";
 import { contractSignTemplate } from "../../lib/email/templates.js";
 import type { SubmitContractInput, CourseConfigInput, ContractResponse, CourseConfigResponse } from "./contracts.schemas.js";
 
-function toContractResponse(c: Contract): ContractResponse {
+type ContractWithConfig = Contract & { config: Pick<ContractCourseConfig, "id" | "label" | "coordenadorNome"> };
+
+function toContractResponse(c: ContractWithConfig): ContractResponse {
   return {
     id: c.id,
     nomeCompleto: c.nomeCompleto,
@@ -16,6 +18,9 @@ function toContractResponse(c: Contract): ContractResponse {
     signUrl: c.signUrl,
     createdAt: c.createdAt.toISOString(),
     signedAt: c.signedAt ? c.signedAt.toISOString() : null,
+    turmaId: c.config.id,
+    turmaLabel: c.config.label,
+    coordenadorNome: c.config.coordenadorNome,
   };
 }
 
@@ -144,7 +149,7 @@ export async function submitContract(
  * estar configurado ainda — sem isso, o status nunca atualizava sozinho.
  * Fica limitado aos 30 mais recentes pendentes pra não estourar rate limit.
  */
-async function syncPendingContracts(rows: Contract[]): Promise<Contract[]> {
+async function syncPendingContracts(rows: ContractWithConfig[]): Promise<ContractWithConfig[]> {
   const pending = rows.filter((r) => r.status === "PENDING" && r.autentiqueDocumentId).slice(0, 30);
   if (pending.length === 0) return rows;
 
@@ -176,7 +181,11 @@ async function syncPendingContracts(rows: Contract[]): Promise<Contract[]> {
 }
 
 export async function listContracts(): Promise<ContractResponse[]> {
-  const rows = await prisma.contract.findMany({ orderBy: { createdAt: "desc" }, take: 500 });
+  const rows = await prisma.contract.findMany({
+    orderBy: { createdAt: "desc" },
+    take: 500,
+    include: { config: { select: { id: true, label: true, coordenadorNome: true } } },
+  });
   const synced = await syncPendingContracts(rows);
   return synced.map(toContractResponse);
 }

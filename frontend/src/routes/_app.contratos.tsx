@@ -113,14 +113,17 @@ function ContractsPage() {
   const { user } = useAuth();
   const canEditConfig = user?.role === "MANAGER" || user?.role === "ADMIN";
   const [newConfigOpen, setNewConfigOpen] = useState(false);
+  const [turmaFilter, setTurmaFilter] = useState<string>("");
 
-  const { data: contracts = [], isLoading } = useQuery({
+  const { data: allContracts = [], isLoading } = useQuery({
     queryKey: ["contracts"],
     queryFn: apiListContracts,
     refetchInterval: 30_000,
   });
 
   const { data: configs = [] } = useQuery({ queryKey: ["contractsConfig"], queryFn: apiListCourseConfigs });
+
+  const contracts = turmaFilter ? allContracts.filter((c) => c.turmaId === turmaFilter) : allContracts;
 
   const total = contracts.length;
   const signed = contracts.filter((c) => c.status === "SIGNED").length;
@@ -146,6 +149,22 @@ function ContractsPage() {
         <StatCard label="Recusados" value={refused} icon={<XCircle size={18} />} tone="bg-danger/15 text-danger" />
       </div>
 
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0">Filtrar por turma</Label>
+        <select
+          value={turmaFilter}
+          onChange={(e) => setTurmaFilter(e.target.value)}
+          className="h-9 max-w-xs rounded-md border border-line bg-surface-1 px-3 text-sm text-fg focus:border-accent/60 focus:outline-none"
+        >
+          <option value="">Todas as turmas</option>
+          {configs.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.label}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <Card>
         <CardBody className="overflow-x-auto p-0">
           <table className="w-full text-sm">
@@ -153,6 +172,8 @@ function ContractsPage() {
               <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-fg-muted">
                 <th className="px-4 py-3 font-medium">Nome</th>
                 <th className="px-4 py-3 font-medium">E-mail</th>
+                <th className="px-4 py-3 font-medium">Turma</th>
+                <th className="px-4 py-3 font-medium">Coordenador</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Enviado em</th>
                 <th className="px-4 py-3 font-medium">Assinado em</th>
@@ -163,6 +184,8 @@ function ContractsPage() {
                 <tr key={c.id} className="border-b border-line/60 last:border-0">
                   <td className="px-4 py-3 text-fg">{c.nomeCompleto}</td>
                   <td className="px-4 py-3 text-fg-muted">{c.email}</td>
+                  <td className="px-4 py-3 text-fg-muted">{c.turmaLabel}</td>
+                  <td className="px-4 py-3 text-fg-muted">{c.coordenadorNome}</td>
                   <td className="px-4 py-3">
                     <Badge tone={c.status === "SIGNED" ? "accent" : c.status === "REFUSED" ? "danger" : "warn"}>
                       {c.status === "SIGNED" ? "Assinado" : c.status === "REFUSED" ? "Recusado" : "Pendente"}
@@ -176,7 +199,7 @@ function ContractsPage() {
               ))}
               {!isLoading && contracts.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-fg-muted">
+                  <td colSpan={7} className="px-4 py-8 text-center text-fg-muted">
                     Nenhum contrato enviado ainda.
                   </td>
                 </tr>
