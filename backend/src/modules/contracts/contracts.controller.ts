@@ -1,6 +1,13 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { submitContractSchema, courseConfigSchema } from "./contracts.schemas.js";
-import { submitContract, listContracts, saveCourseConfig, listCourseConfigs } from "./contracts.service.js";
+import {
+  submitContract,
+  listContracts,
+  saveCourseConfig,
+  updateCourseConfig,
+  deleteCourseConfig,
+  listCourseConfigs,
+} from "./contracts.service.js";
 
 export async function handleSubmitContract(req: FastifyRequest, reply: FastifyReply): Promise<void> {
   const { slug } = req.params as { slug: string };
@@ -23,4 +30,17 @@ export async function handleSaveCourseConfig(req: FastifyRequest, reply: Fastify
   const input = courseConfigSchema.parse(req.body);
   const config = await saveCourseConfig(input, req.user.id);
   reply.status(201).send(config);
+}
+
+export async function handleUpdateCourseConfig(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  const input = courseConfigSchema.parse(req.body);
+  const config = await updateCourseConfig(id, input);
+  reply.status(200).send(config);
+}
+
+export async function handleDeleteCourseConfig(req: FastifyRequest, reply: FastifyReply): Promise<void> {
+  const { id } = req.params as { id: string };
+  await deleteCourseConfig(id);
+  reply.status(204).send();
 }

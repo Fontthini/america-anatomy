@@ -91,6 +91,34 @@ export async function saveCourseConfig(
   throw new AppError(409, "SLUG_CONFLICT", "Não foi possível gerar um link único para essa turma, tente outro nome.");
 }
 
+/** Edita uma turma existente — o slug (link público) não muda, pra não quebrar links já enviados. */
+export async function updateCourseConfig(id: string, input: CourseConfigInput): Promise<CourseConfigResponse> {
+  const existing = await prisma.contractCourseConfig.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) {
+    throw new AppError(404, "COURSE_NOT_FOUND", "Turma não encontrada.");
+  }
+  const config = await prisma.contractCourseConfig.update({ where: { id }, data: input });
+  return toConfigResponse(config);
+}
+
+export async function deleteCourseConfig(id: string): Promise<void> {
+  const existing = await prisma.contractCourseConfig.findUnique({ where: { id }, select: { id: true } });
+  if (!existing) {
+    throw new AppError(404, "COURSE_NOT_FOUND", "Turma não encontrada.");
+  }
+
+  const contractsCount = await prisma.contract.count({ where: { configId: id } });
+  if (contractsCount > 0) {
+    throw new AppError(
+      409,
+      "COURSE_HAS_CONTRACTS",
+      `Essa turma já tem ${contractsCount} contrato(s) gerado(s) e não pode ser excluída.`,
+    );
+  }
+
+  await prisma.contractCourseConfig.delete({ where: { id } });
+}
+
 export async function submitContract(
   slug: string,
   input: SubmitContractInput,

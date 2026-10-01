@@ -6,6 +6,8 @@ import {
   handleListContracts,
   handleListCourseConfigs,
   handleSaveCourseConfig,
+  handleUpdateCourseConfig,
+  handleDeleteCourseConfig,
 } from "./contracts.controller.js";
 import { handleAutentiqueWebhook } from "./contracts.webhook.js";
 
@@ -18,11 +20,10 @@ export async function contractsRoutes(app: FastifyInstance): Promise<void> {
   const staff = { preHandler: [authenticate, requireRole("SALES_REP", "MANAGER", "ADMIN")] };
   app.get("/api/contracts", staff, handleListContracts);
   app.get("/api/contracts/config", staff, handleListCourseConfigs);
-  app.post(
-    "/api/contracts/config",
-    { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] },
-    handleSaveCourseConfig,
-  );
+  const manager = { preHandler: [authenticate, requireRole("MANAGER", "ADMIN")] };
+  app.post("/api/contracts/config", manager, handleSaveCourseConfig);
+  app.patch("/api/contracts/config/:id", manager, handleUpdateCourseConfig);
+  app.delete("/api/contracts/config/:id", manager, handleDeleteCourseConfig);
 
   // Webhook do Autentique — precisa do corpo cru (bytes) pra verificar a assinatura HMAC,
   // então este contexto substitui o parser de JSON só aqui dentro (encapsulamento do Fastify),

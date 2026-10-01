@@ -79,3 +79,16 @@ export async function apiListCourseConfigs(): Promise<CourseConfigResponse[]> {
 export async function apiSaveCourseConfig(payload: CourseConfigPayload): Promise<CourseConfigResponse> {
   return apiFetch<CourseConfigResponse>("/api/contracts/config", { method: "POST", body: JSON.stringify(payload) });
 }
+
+/** PATCH /api/contracts/config/:id — edita uma turma existente (o link/slug não muda) */
+export async function apiUpdateCourseConfig(id: string, payload: CourseConfigPayload): Promise<CourseConfigResponse> {
+  return apiFetch<CourseConfigResponse>(`/api/contracts/config/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
+}
+
+/** DELETE /api/contracts/config/:id — só funciona se a turma ainda não tiver contratos */
+export async function apiDeleteCourseConfig(id: string): Promise<void> {
+  await apiFetch<void>(`/api/contracts/config/${id}`, { method: "DELETE" });
+}

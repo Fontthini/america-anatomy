@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
-import { FileSignature, CheckCircle2, Clock, XCircle, Plus, Copy, Check } from "lucide-react";
+import { FileSignature, CheckCircle2, Clock, XCircle, Plus, Copy, Check, Pencil, Trash2 } from "lucide-react";
 import { PageContainer, PageHeader } from "../components/layout/PageContainer";
 import { Card, CardBody } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
@@ -13,9 +13,12 @@ import {
   apiListContracts,
   apiListCourseConfigs,
   apiSaveCourseConfig,
+  apiUpdateCourseConfig,
+  apiDeleteCourseConfig,
   type CourseConfigPayload,
   type CourseConfigResponse,
 } from "../lib/api/contracts";
+import { ApiError } from "../lib/api/client";
 
 export const Route = createFileRoute("/_app/contratos")({
   head: () => ({ meta: [{ title: "Contratos — Portal AAI" }] }),
@@ -71,7 +74,30 @@ function CopyLinkButton({ slug }: { slug: string }) {
   );
 }
 
-function TurmasCard({ configs, canEdit, onNew }: { configs: CourseConfigResponse[]; canEdit: boolean; onNew: () => void }) {
+function TurmasCard({
+  configs,
+  canEdit,
+  onNew,
+  onEdit,
+}: {
+  configs: CourseConfigResponse[];
+  canEdit: boolean;
+  onNew: () => void;
+  onEdit: (config: CourseConfigResponse) => void;
+}) {
+  const queryClient = useQueryClient();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiDeleteCourseConfig(id),
+    onSuccess: () => {
+      setDeleteError(null);
+      queryClient.invalidateQueries({ queryKey: ["contractsConfig"] });
+    },
+    onError: (err) =>
+      setDeleteError(err instanceof ApiError ? err.message : "Não foi possível excluir essa turma."),
+  });
+
   return (
     <Card>
       <CardBody>
@@ -87,6 +113,8 @@ function TurmasCard({ configs, canEdit, onNew }: { configs: CourseConfigResponse
           )}
         </div>
 
+        {deleteError && <p className="mb-3 text-xs text-danger">{deleteError}</p>}
+
         <div className="divide-y divide-line">
           {configs.map((c) => (
             <div key={c.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -97,7 +125,28 @@ function TurmasCard({ configs, canEdit, onNew }: { configs: CourseConfigResponse
                 </p>
                 <p className="truncate font-mono text-xs text-fg-muted">/contrato/{c.slug}</p>
               </div>
-              <CopyLinkButton slug={c.slug} />
+              <div className="flex shrink-0 items-center gap-2">
+                <CopyLinkButton slug={c.slug} />
+                {canEdit && (
+                  <>
+                    <Button variant="secondary" size="sm" onClick={() => onEdit(c)}>
+                      <Pencil size={14} />
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      loading={deleteMutation.isPending && deleteMutation.variables === c.id}
+                      onClick={() => {
+                        if (confirm(`Excluir a turma "${c.label}"? Isso não pode ser desfeito.`)) {
+                          deleteMutation.mutate(c.id);
+                        }
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
           ))}
           {configs.length === 0 && (
@@ -112,7 +161,7 @@ function TurmasCard({ configs, canEdit, onNew }: { configs: CourseConfigResponse
 function ContractsPage() {
   const { user } = useAuth();
   const canEditConfig = user?.role === "MANAGER" || user?.role === "ADMIN";
-  const [newConfigOpen, setNewConfigOpen] = useState(false);
+  const [formMode, setFormMode] = useState<"closed" | "new" | CourseConfigResponse>("closed");
   const [turmaFilter, setTurmaFilter] = useState<string>("");
 
   const { data: allContracts = [], isLoading } = useQuery({
@@ -138,9 +187,20 @@ function ContractsPage() {
         description="Acompanhe os contratos gerados pelos formulários públicos e o status de assinatura no Autentique."
       />
 
-      <TurmasCard configs={configs} canEdit={canEditConfig} onNew={() => setNewConfigOpen((v) => !v)} />
+      <TurmasCard
+        configs={configs}
+        canEdit={canEditConfig}
+        onNew={() => setFormMode((m) => (m === "new" ? "closed" : "new"))}
+        onEdit={(config) => setFormMode(config)}
+      />
 
-      {newConfigOpen && <CourseConfigCard onSaved={() => setNewConfigOpen(false)} />}
+      {formMode !== "closed" && (
+        <CourseConfigCard
+          editing={formMode === "new" ? null : formMode}
+          onSaved={() => setFormMode("closed")}
+          onCancel={() => setFormMode("closed")}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Total enviados" value={total} icon={<FileSignature size={18} />} tone="bg-accent-soft text-accent" />
@@ -212,9 +272,17 @@ function ContractsPage() {
   );
 }
 
-function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
+function CourseConfigCard({
+  editing,
+  onSaved,
+  onCancel,
+}: {
+  editing: CourseConfigResponse | null;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState<CourseConfigPayload>(EMPTY_CONFIG);
+  const [form, setForm] = useState<CourseConfigPayload>(editing ?? EMPTY_CONFIG);
   const [error, setError] = useState<string | null>(null);
 
   function update<K extends keyof CourseConfigPayload>(key: K, value: string) {
@@ -222,9 +290,10 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
   }
 
   const saveMutation = useMutation({
-    mutationFn: () => apiSaveCourseConfig(form),
+    mutationFn: () => (editing ? apiUpdateCourseConfig(editing.id, form) : apiSaveCourseConfig(form)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contractsConfig"] });
+      queryClient.invalidateQueries({ queryKey: ["contracts"] });
       setForm(EMPTY_CONFIG);
       onSaved();
     },
@@ -241,13 +310,20 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
     <Card>
       <CardBody>
         <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <p className="font-display text-base text-fg">Nova turma</p>
-            <p className="text-xs text-fg-muted">
-              Esses dados (coordenador e evento) entram automaticamente em todo contrato gerado a partir do link
-              desta turma — o paciente não vê nem edita isso. O nome vira o link público, então escolha algo
-              identificável.
-            </p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-display text-base text-fg">{editing ? `Editar turma — ${editing.label}` : "Nova turma"}</p>
+              <p className="text-xs text-fg-muted">
+                Esses dados (coordenador e evento) entram automaticamente em todo contrato gerado a partir do link
+                desta turma — o paciente não vê nem edita isso.
+                {editing
+                  ? " O link público (/contrato/" + editing.slug + ") não muda mesmo editando o resto."
+                  : " O nome vira o link público, então escolha algo identificável."}
+              </p>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+              Cancelar
+            </Button>
           </div>
 
           <div className="space-y-1.5">
@@ -346,7 +422,7 @@ function CourseConfigCard({ onSaved }: { onSaved: () => void }) {
           {error && <p className="text-xs text-danger">{error}</p>}
 
           <Button type="submit" loading={saveMutation.isPending}>
-            Criar turma
+            {editing ? "Salvar alterações" : "Criar turma"}
           </Button>
         </form>
       </CardBody>
